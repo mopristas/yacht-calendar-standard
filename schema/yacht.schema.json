@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/mopristas/yacht-calendar-standard/schema/yacht.schema.json",
+  "title": "Yacht (Level 1: fleet:read)",
+  "type": "object",
+  "required": ["yacht_id", "yacht_name", "length_m", "guests", "cabins"],
+  "additionalProperties": false,
+  "properties": {
+    "yacht_id": { "$ref": "common.schema.json#/$defs/id" },
+    "yacht_name": { "type": "string", "minLength": 1 },
+    "cya_id": { "$ref": "common.schema.json#/$defs/cya_id" },
+    "length_m": { "type": "number", "exclusiveMinimum": 0 },
+    "builder": { "type": ["string", "null"] },
+    "year_built": { "type": ["integer", "null"], "minimum": 1850, "maximum": 2100 },
+    "type": {
+      "type": ["string", "null"],
+      "enum": ["motor", "sail", "catamaran", "power_catamaran", "gulet", "motor_sailer", "other", null]
+    },
+    "guests": { "type": "integer", "minimum": 1 },
+    "cabins": { "type": "integer", "minimum": 0 },
+    "crew": { "type": ["integer", "null"], "minimum": 0 },
+    "updated_at": { "$ref": "common.schema.json#/$defs/utc_timestamp" }
+  }
+}

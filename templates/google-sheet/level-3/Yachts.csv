@@ -1,0 +1,3 @@
+yacht_id,yacht_name,cya_id,length_m,builder,year_built,type,guests,cabins,crew,updated_at
+EXY-001,Blue Horizon,aaaaaaaaaaaaaaaaaaaa0001,38.4,Westport,2008,motor,10,5,8,2026-10-20T08:00:00Z
+EXY-002,Kalimera,,30.0,Bodrum Shipyard,2019,gulet,12,6,5,2026-10-20T08:00:00Z

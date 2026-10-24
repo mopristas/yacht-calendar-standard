@@ -1,0 +1,129 @@
+{
+  "standard": "yacht-calendar-standard/0.1",
+  "ca": "Example Yachts Ltd",
+  "generated_at": "2026-10-24T09:00:00Z",
+  "level": 4,
+  "yachts": [
+    {
+      "yacht_id": "EXY-001",
+      "yacht_name": "Blue Horizon",
+      "cya_id": "aaaaaaaaaaaaaaaaaaaa0001",
+      "length_m": 38.4,
+      "builder": "Westport",
+      "year_built": 2008,
+      "type": "motor",
+      "guests": 10,
+      "cabins": 5,
+      "crew": 8,
+      "updated_at": "2026-10-20T08:00:00Z"
+    },
+    {
+      "yacht_id": "EXY-002",
+      "yacht_name": "Kalimera",
+      "cya_id": null,
+      "length_m": 30.0,
+      "builder": "Bodrum Shipyard",
+      "year_built": 2019,
+      "type": "gulet",
+      "guests": 12,
+      "cabins": 6,
+      "crew": 5,
+      "updated_at": "2026-10-20T08:00:00Z"
+    }
+  ],
+  "bookings": [
+    {
+      "booking_id": "BK-2027-0142",
+      "yacht_id": "EXY-001",
+      "category": "booked",
+      "start": "2027-07-10T12:00",
+      "end": "2027-07-17T12:00",
+      "timezone": "Europe/Athens",
+      "pickup_location": "Argostoli, Greece",
+      "drop_off_location": "Zakynthos, Greece",
+      "hold_expires": null,
+      "updated_at": "2026-10-24T09:00:00Z"
+    },
+    {
+      "booking_id": "BK-2027-0150",
+      "yacht_id": "EXY-001",
+      "category": "hold",
+      "start": "2027-07-18T12:00",
+      "end": "2027-07-25T12:00",
+      "timezone": "Europe/Athens",
+      "pickup_location": "Zakynthos, Greece",
+      "drop_off_location": "Lefkas Marina, Greece",
+      "hold_expires": "2026-11-02T18:00:00Z",
+      "updated_at": "2026-10-24T09:00:00Z"
+    },
+    {
+      "booking_id": "UN-2027-0003",
+      "yacht_id": "EXY-002",
+      "category": "unavailable",
+      "start": "2027-04-01T09:00",
+      "end": "2027-05-15T18:00",
+      "timezone": "Europe/Istanbul",
+      "pickup_location": "Bodrum, Turkey",
+      "drop_off_location": "Bodrum, Turkey",
+      "hold_expires": null,
+      "updated_at": "2026-10-22T14:30:00Z"
+    }
+  ],
+  "seasons": [
+    {
+      "yacht_id": "EXY-001",
+      "title": "High Season",
+      "start_date": "2027-07-01",
+      "end_date": "2027-08-31",
+      "base_port": "Lefkas Marina, Greece",
+      "cruising_areas": [
+        "Ionian"
+      ],
+      "relocation_ports": [
+        {
+          "port": "Corfu, Greece",
+          "fee": 4500
+        },
+        {
+          "port": "Zakynthos, Greece",
+          "fee": null
+        }
+      ],
+      "turnaround_hours": 24,
+      "min_nights": 7,
+      "currency": "EUR",
+      "weekly_rate_low": 108000,
+      "weekly_rate_high": 120000,
+      "vat_percent": 5.2,
+      "apa_percent": 35,
+      "terms": "plus_expenses",
+      "holiday_rules": null
+    },
+    {
+      "yacht_id": "EXY-002",
+      "title": "Summer",
+      "start_date": "2027-05-16",
+      "end_date": "2027-10-15",
+      "base_port": "Bodrum, Turkey",
+      "cruising_areas": [
+        "Turkish Riviera",
+        "Dodecanese"
+      ],
+      "relocation_ports": [
+        {
+          "port": "Göcek, Turkey",
+          "fee": 2000
+        }
+      ],
+      "turnaround_hours": 24,
+      "min_nights": 7,
+      "currency": "EUR",
+      "weekly_rate_low": 28000,
+      "weekly_rate_high": null,
+      "vat_percent": 0,
+      "apa_percent": 20,
+      "terms": "inclusive",
+      "holiday_rules": null
+    }
+  ]
+}

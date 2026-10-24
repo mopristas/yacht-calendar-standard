@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/mopristas/yacht-calendar-standard/schema/feed.schema.json",
+  "title": "Feed document",
+  "type": "object",
+  "required": ["standard", "ca", "generated_at", "level", "yachts"],
+  "additionalProperties": false,
+  "properties": {
+    "standard": { "type": "string", "pattern": "^yacht-calendar-standard/\\d+\\.\\d+$" },
+    "ca": { "type": "string", "minLength": 1 },
+    "generated_at": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}(:\\d{2})?Z$" },
+    "level": { "type": "integer", "enum": [1, 2, 3, 4] },
+    "yachts": { "type": "array", "items": { "$ref": "yacht.schema.json" } },
+    "availability": { "type": "array", "items": { "$ref": "availability.schema.json" } },
+    "bookings": { "type": "array", "items": { "$ref": "booking.schema.json" } },
+    "seasons": { "type": "array", "items": { "$ref": "season.schema.json" } }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "level": { "const": 1 } } },
+      "then": { "not": { "anyOf": [ { "required": ["availability"] }, { "required": ["bookings"] }, { "required": ["seasons"] } ] } }
+    },
+    {
+      "if": { "properties": { "level": { "const": 2 } } },
+      "then": { "required": ["availability"], "not": { "anyOf": [ { "required": ["bookings"] }, { "required": ["seasons"] } ] } }
+    },
+    {
+      "if": { "properties": { "level": { "const": 3 } } },
+      "then": { "required": ["bookings"], "not": { "anyOf": [ { "required": ["availability"] }, { "required": ["seasons"] } ] } }
+    },
+    {
+      "if": { "properties": { "level": { "const": 4 } } },
+      "then": { "required": ["bookings", "seasons"], "not": { "required": ["availability"] } }
+    }
+  ]
+}

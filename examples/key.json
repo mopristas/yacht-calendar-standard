@@ -1,0 +1,12 @@
+{
+  "ca": "Example Yachts Ltd",
+  "partner": "Example Broker",
+  "level": 3,
+  "scopes": [
+    "fleet:read",
+    "availability:read",
+    "calendar:read"
+  ],
+  "yacht_ids": null,
+  "expires_at": "2027-12-31T23:59:59Z"
+}

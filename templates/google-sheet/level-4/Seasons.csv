@@ -1,0 +1,3 @@
+yacht_id,title,start_date,end_date,base_port,cruising_areas,relocation_ports,turnaround_hours,min_nights,currency,weekly_rate_low,weekly_rate_high,vat_percent,apa_percent,terms,holiday_rules
+EXY-001,High Season,2027-07-01,2027-08-31,"Lefkas Marina, Greece",Ionian,"Corfu, Greece = 4500; Zakynthos, Greece",24,7,EUR,108000,120000,5.2,35,plus_expenses,
+EXY-002,Summer,2027-05-16,2027-10-15,"Bodrum, Turkey",Turkish Riviera; Dodecanese,"Göcek, Turkey = 2000",24,7,EUR,28000,,0,20,inclusive,

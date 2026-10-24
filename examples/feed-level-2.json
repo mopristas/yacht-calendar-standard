@@ -1,0 +1,57 @@
+{
+  "standard": "yacht-calendar-standard/0.1",
+  "ca": "Example Yachts Ltd",
+  "generated_at": "2026-10-24T09:00:00Z",
+  "level": 2,
+  "yachts": [
+    {
+      "yacht_id": "EXY-001",
+      "yacht_name": "Blue Horizon",
+      "cya_id": "aaaaaaaaaaaaaaaaaaaa0001",
+      "length_m": 38.4,
+      "builder": "Westport",
+      "year_built": 2008,
+      "type": "motor",
+      "guests": 10,
+      "cabins": 5,
+      "crew": 8,
+      "updated_at": "2026-10-20T08:00:00Z"
+    },
+    {
+      "yacht_id": "EXY-002",
+      "yacht_name": "Kalimera",
+      "cya_id": null,
+      "length_m": 30.0,
+      "builder": "Bodrum Shipyard",
+      "year_built": 2019,
+      "type": "gulet",
+      "guests": 12,
+      "cabins": 6,
+      "crew": 5,
+      "updated_at": "2026-10-20T08:00:00Z"
+    }
+  ],
+  "availability": [
+    {
+      "yacht_id": "EXY-001",
+      "start": "2027-07-10T12:00",
+      "end": "2027-07-17T12:00",
+      "timezone": "Europe/Athens",
+      "category": "booked"
+    },
+    {
+      "yacht_id": "EXY-001",
+      "start": "2027-07-18T12:00",
+      "end": "2027-07-25T12:00",
+      "timezone": "Europe/Athens",
+      "category": "hold"
+    },
+    {
+      "yacht_id": "EXY-002",
+      "start": "2027-04-01T09:00",
+      "end": "2027-05-15T18:00",
+      "timezone": "Europe/Istanbul",
+      "category": "unavailable"
+    }
+  ]
+}

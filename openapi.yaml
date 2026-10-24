@@ -1,0 +1,150 @@
+openapi: 3.1.0
+info:
+  title: Yacht Calendar Standard API
+  version: "0.1"
+  description: >
+    Read-only API a central agent (CA) serves so partners can read its fleet,
+    availability, calendar and seasons. Each key carries the access levels the CA
+    granted; see ACCESS-LEVELS.md. No endpoint ever returns client names or other
+    personal data.
+  license:
+    name: CC BY 4.0
+    url: https://creativecommons.org/licenses/by/4.0/
+servers:
+  - url: https://api.example-ca.com
+security:
+  - bearerKey: []
+components:
+  securitySchemes:
+    bearerKey:
+      type: http
+      scheme: bearer
+      description: >
+        One key per partner. Scopes: fleet:read (level 1), availability:read (level 2),
+        calendar:read (level 3), rates:read (level 4). Each level includes the ones below it.
+  parameters:
+    from: { name: from, in: query, schema: { type: string, format: date }, description: Return periods that end on or after this date }
+    to: { name: to, in: query, schema: { type: string, format: date }, description: Return periods that start on or before this date }
+    yachtId: { name: yacht_id, in: query, schema: { type: string } }
+    updatedSince: { name: updated_since, in: query, schema: { type: string, format: date-time }, description: Only records changed after this UTC time }
+    cursor: { name: cursor, in: query, schema: { type: string } }
+  responses:
+    InvalidKey:
+      description: No key, unknown key, or an expired or revoked key
+      content: { application/json: { schema: { $ref: "#/components/schemas/Error" }, example: { error: invalid_key } } }
+    InsufficientScope:
+      description: The key's level is too low for this endpoint
+      content: { application/json: { schema: { $ref: "#/components/schemas/Error" }, example: { error: insufficient_scope, required: calendar:read } } }
+  schemas:
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error: { type: string, enum: [invalid_key, insufficient_scope, not_found] }
+        required: { type: string }
+    Key:
+      type: object
+      required: [ca, partner, level, scopes, yacht_ids, expires_at]
+      properties:
+        ca: { type: string }
+        partner: { type: string }
+        level: { type: integer, enum: [1, 2, 3, 4] }
+        scopes: { type: array, items: { type: string, enum: ["fleet:read", "availability:read", "calendar:read", "rates:read"] } }
+        yacht_ids: { type: [array, "null"], items: { type: string }, description: null = the whole fleet }
+        expires_at: { type: [string, "null"], format: date-time }
+    Yacht: { $ref: "schema/yacht.schema.json" }
+    Availability: { $ref: "schema/availability.schema.json" }
+    Booking: { $ref: "schema/booking.schema.json" }
+    Season: { $ref: "schema/season.schema.json" }
+    Feed: { $ref: "schema/feed.schema.json" }
+paths:
+  /v1/key:
+    get:
+      summary: What this key can read
+      responses:
+        "200": { description: The key's grant, content: { application/json: { schema: { $ref: "#/components/schemas/Key" } } } }
+        "401": { $ref: "#/components/responses/InvalidKey" }
+  /v1/yachts:
+    get:
+      summary: Fleet list (level 1, fleet:read)
+      parameters: [{ $ref: "#/components/parameters/cursor" }]
+      responses:
+        "200":
+          description: Yachts this key covers
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [yachts]
+                properties:
+                  yachts: { type: array, items: { $ref: "#/components/schemas/Yacht" } }
+                  next_cursor: { type: [string, "null"] }
+        "401": { $ref: "#/components/responses/InvalidKey" }
+  /v1/availability:
+    get:
+      summary: Busy periods (level 2, availability:read)
+      parameters:
+        - { $ref: "#/components/parameters/from" }
+        - { $ref: "#/components/parameters/to" }
+        - { $ref: "#/components/parameters/yachtId" }
+        - { $ref: "#/components/parameters/cursor" }
+      responses:
+        "200":
+          description: Busy periods. A date with no period means no booking is recorded, not confirmed availability.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [availability]
+                properties:
+                  availability: { type: array, items: { $ref: "#/components/schemas/Availability" } }
+                  next_cursor: { type: [string, "null"] }
+        "401": { $ref: "#/components/responses/InvalidKey" }
+        "403": { $ref: "#/components/responses/InsufficientScope" }
+  /v1/bookings:
+    get:
+      summary: Bookings and holds with ports (level 3, calendar:read)
+      parameters:
+        - { $ref: "#/components/parameters/from" }
+        - { $ref: "#/components/parameters/to" }
+        - { $ref: "#/components/parameters/yachtId" }
+        - { $ref: "#/components/parameters/updatedSince" }
+        - { $ref: "#/components/parameters/cursor" }
+      responses:
+        "200":
+          description: Bookings, holds and unavailable periods
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [bookings]
+                properties:
+                  bookings: { type: array, items: { $ref: "#/components/schemas/Booking" } }
+                  next_cursor: { type: [string, "null"] }
+        "401": { $ref: "#/components/responses/InvalidKey" }
+        "403": { $ref: "#/components/responses/InsufficientScope" }
+  /v1/seasons:
+    get:
+      summary: Seasons, ports and rates (level 4, rates:read)
+      parameters:
+        - { $ref: "#/components/parameters/yachtId" }
+        - { $ref: "#/components/parameters/cursor" }
+      responses:
+        "200":
+          description: Seasons
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [seasons]
+                properties:
+                  seasons: { type: array, items: { $ref: "#/components/schemas/Season" } }
+                  next_cursor: { type: [string, "null"] }
+        "401": { $ref: "#/components/responses/InvalidKey" }
+        "403": { $ref: "#/components/responses/InsufficientScope" }
+  /v1/feed:
+    get:
+      summary: Everything this key may read, as one feed document
+      responses:
+        "200": { description: A feed at the key's level, content: { application/json: { schema: { $ref: "#/components/schemas/Feed" } } } }
+        "401": { $ref: "#/components/responses/InvalidKey" }

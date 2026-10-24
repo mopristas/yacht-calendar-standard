@@ -1,0 +1,17 @@
+name: validate
+on: [push, pull_request]
+jobs:
+  examples:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - name: Validator on every example
+        run: |
+          for f in examples/feed-level-*.json; do python3 tools/validate.py "$f"; done
+          for d in templates/google-sheet/level-*; do python3 tools/validate.py "$d"; done
+      - name: Examples against the JSON Schemas
+        run: |
+          pip install -q "jsonschema>=4.18" referencing pyyaml
+          python3 tools/check_schemas.py
