@@ -25,55 +25,70 @@ DATE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 TZ = re.compile(r"^[A-Za-z_]+(/[A-Za-z0-9_+-]+)+$|^UTC$")
 CURRENCY = re.compile(r"^[A-Z]{3}$")
 LOCATION = re.compile(r"^.+, .+$")
-CATEGORIES = {"booked", "hold", "unavailable"}
+URL = re.compile(r"^https?://")
+STATUSES = {"booked", "hold", "unavailable"}
 YACHT_TYPES = {"motor", "sail", "catamaran", "power_catamaran", "gulet", "motor_sailer", "other"}
+CABIN_TYPES = {"master", "vip", "double", "twin", "single", "bunk", "convertible"}
 TERMS = {"plus_expenses", "inclusive", "all_inclusive"}
 PERSONAL = re.compile(r"client|guest_name|email|phone|passport|owner_name|commission|fee_paid|price_paid", re.I)
 
 # field -> (required, kind)
 YACHT = {
-    "yacht_id": (True, "id"), "yacht_name": (True, "str"), "cya_id": (False, "cya_id"),
-    "length_m": (True, "pos_number"), "builder": (False, "str"), "year_built": (False, "int"),
-    "type": (False, "yacht_type"), "guests": (True, "pos_int"), "cabins": (True, "int"),
-    "crew": (False, "int"), "updated_at": (False, "utc"),
+    "id": (True, "id"), "name": (True, "str"), "cya_id": (False, "cya_id"),
+    "previous_names": (False, "str_list"), "type": (False, "yacht_type"), "builder": (False, "str"),
+    "model": (False, "str"), "year": (False, "year"), "refit": (False, "year"), "flag": (False, "str"),
+    "length": (True, "pos_number"), "beam": (False, "pos_number"), "draft": (False, "pos_number"),
+    "cruising_speed": (False, "number"), "max_speed": (False, "number"), "range": (False, "number"),
+    "fuel_per_hour": (False, "number"), "guests": (True, "pos_int"), "cabins": (True, "int"),
+    "cabin_types": (False, "cabin_types"), "crew": (False, "int"), "home_port": (False, "location"),
+    "cruising_areas": (False, "str_list"), "air_conditioning": (False, "bool"), "ac_at_night": (False, "bool"),
+    "diving": (False, "bool"), "amenities": (False, "str_list"), "toys": (False, "str_list"),
+    "description": (False, "str"), "crew_description": (False, "str"), "photos": (False, "url_list"),
+    "videos": (False, "url_list"), "brochure": (False, "url"), "updated_at": (False, "utc"),
 }
 AVAILABILITY = {
     "yacht_id": (True, "id"), "start": (True, "local_dt"), "end": (True, "local_dt"),
-    "timezone": (True, "tz"), "category": (True, "category"),
+    "timezone": (True, "tz"), "status": (True, "status"),
 }
 BOOKING = {
-    "booking_id": (True, "id"), "yacht_id": (True, "id"), "category": (True, "category"),
+    "id": (True, "id"), "yacht_id": (True, "id"), "status": (True, "status"),
     "start": (True, "local_dt"), "end": (True, "local_dt"), "timezone": (True, "tz"),
-    "pickup_location": (True, "location"), "drop_off_location": (True, "location"),
+    "pickup": (True, "location"), "dropoff": (True, "location"),
     "hold_expires": (False, "utc"), "updated_at": (True, "utc"),
 }
 SEASON = {
-    "yacht_id": (True, "id"), "title": (True, "str"), "start_date": (True, "date"),
-    "end_date": (True, "date"), "base_port": (True, "location"), "cruising_areas": (True, "str_list"),
-    "relocation_ports": (False, "ports"), "turnaround_hours": (True, "int"), "min_nights": (False, "pos_int"),
-    "currency": (True, "currency"), "weekly_rate_low": (True, "number"), "weekly_rate_high": (False, "number"),
-    "vat_percent": (True, "percent"), "apa_percent": (True, "percent"), "terms": (True, "terms"),
-    "holiday_rules": (False, "str"),
+    "yacht_id": (True, "id"), "name": (True, "str"), "start": (True, "date"), "end": (True, "date"),
+    "base_port": (True, "location"), "cruising_areas": (True, "str_list"), "relocation_ports": (False, "ports"),
+    "turnaround_hours": (True, "int"), "min_nights": (False, "pos_int"), "currency": (True, "currency"),
+    "weekly_rate_from": (True, "number"), "weekly_rate_to": (False, "number"),
+    "vat": (True, "percent"), "apa": (True, "percent"), "terms": (True, "terms"), "holidays": (False, "str"),
 }
 LISTS = {"yachts": YACHT, "availability": AVAILABILITY, "bookings": BOOKING, "seasons": SEASON}
-INT_FIELDS = {"year_built", "guests", "cabins", "crew", "turnaround_hours", "min_nights"}
-NUM_FIELDS = {"length_m", "weekly_rate_low", "weekly_rate_high", "vat_percent", "apa_percent"}
+
+
+def _int(v):
+    return isinstance(v, int) and not isinstance(v, bool)
+
+
+def _num(v):
+    return isinstance(v, (int, float)) and not isinstance(v, bool)
 
 
 def check_value(kind, v):
     """Return an error string, or None if v is valid for kind."""
-    is_num = isinstance(v, (int, float)) and not isinstance(v, bool)
     checks = {
         "id": lambda: isinstance(v, str) and ID.match(v),
         "str": lambda: isinstance(v, str) and v.strip(),
         "cya_id": lambda: isinstance(v, str) and CYA_ID.match(v),
-        "pos_number": lambda: is_num and v > 0,
-        "number": lambda: is_num and v >= 0,
-        "int": lambda: isinstance(v, int) and not isinstance(v, bool) and v >= 0,
-        "pos_int": lambda: isinstance(v, int) and not isinstance(v, bool) and v >= 1,
-        "percent": lambda: is_num and 0 <= v <= 100,
+        "pos_number": lambda: _num(v) and v > 0,
+        "number": lambda: _num(v) and v >= 0,
+        "int": lambda: _int(v) and v >= 0,
+        "pos_int": lambda: _int(v) and v >= 1,
+        "year": lambda: _int(v) and 1850 <= v <= 2100,
+        "percent": lambda: _num(v) and 0 <= v <= 100,
+        "bool": lambda: isinstance(v, bool),
         "yacht_type": lambda: v in YACHT_TYPES,
-        "category": lambda: v in CATEGORIES,
+        "status": lambda: v in STATUSES,
         "terms": lambda: v in TERMS,
         "local_dt": lambda: isinstance(v, str) and LOCAL_DT.match(v),
         "utc": lambda: isinstance(v, str) and UTC_TS.match(v),
@@ -81,15 +96,18 @@ def check_value(kind, v):
         "tz": lambda: isinstance(v, str) and TZ.match(v),
         "currency": lambda: isinstance(v, str) and CURRENCY.match(v),
         "location": lambda: isinstance(v, str) and LOCATION.match(v),
-        "str_list": lambda: isinstance(v, list) and v and all(isinstance(x, str) and x for x in v),
+        "url": lambda: isinstance(v, str) and URL.match(v),
+        "str_list": lambda: isinstance(v, list) and all(isinstance(x, str) and x for x in v),
+        "url_list": lambda: isinstance(v, list) and all(isinstance(x, str) and URL.match(x) for x in v),
+        "cabin_types": lambda: isinstance(v, dict) and all(k in CABIN_TYPES and _int(n) and n >= 0 for k, n in v.items()),
         "ports": lambda: isinstance(v, list) and all(
-            isinstance(p, dict) and LOCATION.match(str(p.get("port", "")))
-            and (p.get("fee") is None or (isinstance(p["fee"], (int, float)) and p["fee"] >= 0)) for p in v),
+            isinstance(p, dict) and set(p) <= {"port", "fee"} and LOCATION.match(str(p.get("port", "")))
+            and ("fee" not in p or (_num(p["fee"]) and p["fee"] >= 0)) for p in v),
     }
     return None if checks[kind]() else f"bad {kind}: {v!r}"
 
 
-def check_records(name, records, fields, errors):
+def check_records(name, records, fields, errors, from_sheet):
     for i, rec in enumerate(records):
         where = f"{name}[{i}]"
         if not isinstance(rec, dict):
@@ -101,14 +119,21 @@ def check_records(name, records, fields, errors):
             if PERSONAL.search(key):
                 errors.append(f"{where}: field '{key}' looks like personal or financial data, which no level may contain")
         for key, (required, kind) in fields.items():
-            v = rec.get(key)
-            if v is None or v == "" or v == []:
+            if key not in rec or (from_sheet and rec[key] is None):
                 if required:
                     errors.append(f"{where}: missing required '{key}'")
+                continue
+            v = rec[key]
+            if v is None:
+                errors.append(f"{where}.{key}: null; leave the field out instead")
                 continue
             err = check_value(kind, v)
             if err:
                 errors.append(f"{where}.{key}: {err}")
+        if name == "yachts" and isinstance(rec.get("cabin_types"), dict) and _int(rec.get("cabins")):
+            total = sum(n for n in rec["cabin_types"].values() if _int(n))
+            if total != rec["cabins"]:
+                errors.append(f"{where}: cabin_types add up to {total}, but cabins is {rec['cabins']}")
 
 
 def parse_local(s):
@@ -119,13 +144,13 @@ def parse_local(s):
 
 
 def check_rules(feed, errors, warnings):
-    yacht_ids = [y.get("yacht_id") for y in feed.get("yachts", []) if isinstance(y, dict)]
+    yacht_ids = [y.get("id") for y in feed.get("yachts", []) if isinstance(y, dict)]
     known = set(yacht_ids)
     if len(known) != len(yacht_ids):
-        errors.append("yachts: duplicate yacht_id")
+        errors.append("yachts: duplicate id")
 
-    periods = feed.get("bookings") or feed.get("availability") or []
     name = "bookings" if "bookings" in feed else "availability"
+    periods = feed.get(name) or []
     booking_ids = set()
     by_yacht = {}
     for i, p in enumerate(periods):
@@ -140,16 +165,18 @@ def check_rules(feed, errors, warnings):
                 errors.append(f"{where}: end is not after start")
             by_yacht.setdefault(p.get("yacht_id"), []).append((start, end, where))
         if name == "bookings":
-            bid = p.get("booking_id")
+            bid = p.get("id")
             if bid in booking_ids:
-                errors.append(f"{where}: duplicate booking_id '{bid}'")
+                errors.append(f"{where}: duplicate booking id '{bid}'")
             booking_ids.add(bid)
-            if p.get("category") == "hold" and not p.get("hold_expires"):
-                errors.append(f"{where}: a hold needs hold_expires")
-            if p.get("category") == "hold" and p.get("hold_expires") and UTC_TS.match(p["hold_expires"]):
-                expires = datetime.strptime(p["hold_expires"][:16], "%Y-%m-%dT%H:%M").replace(tzinfo=timezone.utc)
-                if expires < datetime.now(timezone.utc):
-                    warnings.append(f"{where}: hold expired {p['hold_expires']}; a released hold must leave the feed or become booked")
+            if p.get("status") == "hold":
+                expires = p.get("hold_expires")
+                if not expires:
+                    errors.append(f"{where}: a hold needs hold_expires")
+                elif isinstance(expires, str) and UTC_TS.match(expires):
+                    when = datetime.strptime(expires[:16], "%Y-%m-%dT%H:%M").replace(tzinfo=timezone.utc)
+                    if when < datetime.now(timezone.utc):
+                        warnings.append(f"{where}: hold expired {expires}; a released hold must leave the feed or become booked")
 
     for yid, spans in by_yacht.items():
         spans.sort()
@@ -157,16 +184,16 @@ def check_rules(feed, errors, warnings):
             if s2 < e1:
                 errors.append(f"{w2}: overlaps {w1} for yacht '{yid}'")
 
-    for i, s in enumerate(feed.get("seasons", [])):
+    for i, s in enumerate(feed.get("seasons") or []):
         if not isinstance(s, dict):
             continue
         if s.get("yacht_id") not in known:
             errors.append(f"seasons[{i}]: yacht_id '{s.get('yacht_id')}' is not in the yacht list")
-        if isinstance(s.get("start_date"), str) and isinstance(s.get("end_date"), str) and s["end_date"] < s["start_date"]:
-            errors.append(f"seasons[{i}]: end_date is before start_date")
-        low, high = s.get("weekly_rate_low"), s.get("weekly_rate_high")
-        if isinstance(low, (int, float)) and isinstance(high, (int, float)) and high < low:
-            errors.append(f"seasons[{i}]: weekly_rate_high is below weekly_rate_low")
+        if isinstance(s.get("start"), str) and isinstance(s.get("end"), str) and s["end"] < s["start"]:
+            errors.append(f"seasons[{i}]: end is before start")
+        low, high = s.get("weekly_rate_from"), s.get("weekly_rate_to")
+        if _num(low) and _num(high) and high < low:
+            errors.append(f"seasons[{i}]: weekly_rate_to is below weekly_rate_from")
 
 
 def provided_level(feed):
@@ -182,7 +209,7 @@ def provided_level(feed):
 REQUIRED_KEYS = {1: {"yachts"}, 2: {"yachts", "availability"}, 3: {"yachts", "bookings"}, 4: {"yachts", "bookings", "seasons"}}
 
 
-def validate(feed):
+def validate(feed, from_sheet=False):
     errors, warnings = [], []
     if not isinstance(feed, dict):
         return ["feed is not a JSON object"], [], 0
@@ -206,40 +233,55 @@ def validate(feed):
     for name, fields in LISTS.items():
         if name in feed:
             if isinstance(feed[name], list):
-                check_records(name, feed[name], fields, errors)
+                check_records(name, feed[name], fields, errors, from_sheet)
             else:
                 errors.append(f"{name}: must be a list")
     check_rules(feed, errors, warnings)
     return errors, warnings, provided_level(feed)
 
 
+def _number(raw):
+    try:
+        f = float(raw)
+    except ValueError:
+        return raw
+    return int(f) if f.is_integer() and "." not in raw else f
+
+
 def csv_cell(field, raw, fields):
+    """Sheet cell -> JSON value, following SPEC.md section 8."""
     raw = raw.strip()
     if raw == "":
         return None
     kind = fields[field][1] if field in fields else "str"
-    if kind == "str_list":
-        return [x.strip() for x in raw.split(";") if x.strip()]
+    parts = [x.strip() for x in raw.split(";") if x.strip()]
+    if kind in ("str_list", "url_list"):
+        return parts
+    if kind == "bool":
+        return {"yes": True, "no": False, "true": True, "false": False}.get(raw.lower(), raw)
+    if kind == "cabin_types":
+        out = {}
+        for part in parts:
+            k, _, n = part.partition("=")
+            out[k.strip()] = _number(n.strip()) if n.strip() else n
+        return out
     if kind == "ports":
         ports = []
-        for part in [x.strip() for x in raw.split(";") if x.strip()]:
+        for part in parts:
             port, _, fee = part.partition("=")
-            fee = fee.strip()
-            ports.append({"port": port.strip(), "fee": float(fee) if fee.replace(".", "", 1).isdigit() else (fee or None)})
+            entry = {"port": port.strip()}
+            if fee.strip():
+                entry["fee"] = _number(fee.strip())
+            ports.append(entry)
         return ports
-    if field in INT_FIELDS:
-        return int(raw) if raw.isdigit() else raw
-    if field in NUM_FIELDS:
-        try:
-            return float(raw)
-        except ValueError:
-            return raw
+    if kind in ("int", "pos_int", "year", "number", "pos_number", "percent"):
+        return _number(raw)
     return raw
 
 
 def load_sheet_folder(folder):
     tabs = {"Yachts": "yachts", "Availability": "availability", "Bookings": "bookings", "Seasons": "seasons"}
-    feed = {"standard": "yacht-calendar-standard/0.1", "ca": folder.name,
+    feed = {"standard": "yacht-calendar-standard/0.2", "ca": folder.name,
             "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")}
     for tab, key in tabs.items():
         path = folder / f"{tab}.csv"
@@ -255,8 +297,11 @@ def main(argv):
         print(__doc__.strip())
         return 2
     path = Path(argv[1])
-    feed = load_sheet_folder(path) if path.is_dir() else json.loads(path.read_text(encoding="utf-8"))
-    errors, warnings, level = validate(feed)
+    if path.is_dir():
+        feed, from_sheet = load_sheet_folder(path), True
+    else:
+        feed, from_sheet = json.loads(path.read_text(encoding="utf-8")), False
+    errors, warnings, level = validate(feed, from_sheet)
     names = {0: "none", 1: "Fleet", 2: "Availability", 3: "Calendar", 4: "Seasons and rates"}
     for w in warnings:
         print(f"warning: {w}")

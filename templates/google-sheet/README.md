@@ -9,6 +9,6 @@ One folder per access level. Each CSV is one tab: import it into a Google Sheet 
 | `level-3/` | Yachts, Bookings | 3. Calendar |
 | `level-4/` | Yachts, Bookings, Seasons | 4. Seasons and rates |
 
-Lists go in one cell separated by `; `. Relocation ports with a delivery fee: `Corfu, Greece = 4500; Preveza, Greece`.
+Only `id`, `name`, `length`, `guests` and `cabins` are required on Yachts; delete any optional column you never fill. Lists go in one cell separated by `; `, yes/no columns take `yes` or `no`, and cabin types look like `master = 1; double = 2; twin = 2`. Relocation ports with a delivery fee: `Corfu, Greece = 4500; Preveza, Greece`.
 
 Check a sheet before you share it: download each tab as CSV into one folder and run `python3 tools/validate.py <folder>`.

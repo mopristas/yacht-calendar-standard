@@ -3,20 +3,20 @@
   "$id": "https://github.com/mopristas/yacht-calendar-standard/schema/booking.schema.json",
   "title": "Booking or hold (Level 3: calendar:read)",
   "type": "object",
-  "required": ["booking_id", "yacht_id", "category", "start", "end", "timezone", "pickup_location", "drop_off_location", "updated_at"],
+  "required": ["id", "yacht_id", "status", "start", "end", "timezone", "pickup", "dropoff", "updated_at"],
   "additionalProperties": false,
   "properties": {
-    "booking_id": { "$ref": "common.schema.json#/$defs/id" },
+    "id": { "$ref": "common.schema.json#/$defs/id" },
     "yacht_id": { "$ref": "common.schema.json#/$defs/id" },
-    "category": { "$ref": "common.schema.json#/$defs/category" },
+    "status": { "$ref": "common.schema.json#/$defs/status" },
     "start": { "$ref": "common.schema.json#/$defs/local_datetime" },
     "end": { "$ref": "common.schema.json#/$defs/local_datetime" },
     "timezone": { "$ref": "common.schema.json#/$defs/timezone" },
-    "pickup_location": { "$ref": "common.schema.json#/$defs/location" },
-    "drop_off_location": { "$ref": "common.schema.json#/$defs/location" },
+    "pickup": { "$ref": "common.schema.json#/$defs/location" },
+    "dropoff": { "$ref": "common.schema.json#/$defs/location" },
     "hold_expires": { "$ref": "common.schema.json#/$defs/utc_timestamp" },
-    "updated_at": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}(:\\d{2})?Z$" }
+    "updated_at": { "$ref": "common.schema.json#/$defs/utc_timestamp" }
   },
-  "if": { "properties": { "category": { "const": "hold" } } },
-  "then": { "required": ["hold_expires"], "properties": { "hold_expires": { "type": "string" } } }
+  "if": { "properties": { "status": { "const": "hold" } } },
+  "then": { "required": ["hold_expires"] }
 }

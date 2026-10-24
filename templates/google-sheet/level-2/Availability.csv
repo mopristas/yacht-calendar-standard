@@ -1,4 +1,4 @@
-yacht_id,start,end,timezone,category
+yacht_id,start,end,timezone,status
 EXY-001,2027-07-10T12:00,2027-07-17T12:00,Europe/Athens,booked
 EXY-001,2027-07-18T12:00,2027-07-25T12:00,Europe/Athens,hold
 EXY-002,2027-04-01T09:00,2027-05-15T18:00,Europe/Istanbul,unavailable

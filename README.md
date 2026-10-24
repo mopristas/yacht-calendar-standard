@@ -2,17 +2,18 @@
 
 An open format for sharing a charter fleet's yachts, availability and calendars with charter brokers.
 
-Central agents (CAs) and fleet operators publish one feed. Brokers, and the AI assistants that brokers use, read it. The field names follow the Central Yacht Agent (CYA) booking and season format, so a CA that already keeps CYA current has nothing new to learn. The one addition is that **every booking carries its pickup and drop-off port**.
+Central agents (CAs) and fleet operators publish one feed. Brokers, and the AI assistants that brokers use, read it. Field names are plain English (`name`, `length`, `pickup`, `dropoff`), and [CYA.md](CYA.md) maps each one to its Central Yacht Agent (CYA) field, so a CA already on CYA can convert in minutes. The one thing we add to what CAs usually share is that **every booking carries its pickup and drop-off port**.
 
 Maintained by [DMA Yachting](https://dmayachting.com). Free to use and implement, by anyone, with any partner.
 
 - Specification: [SPEC.md](SPEC.md)
 - Access levels and keys: [ACCESS-LEVELS.md](ACCESS-LEVELS.md)
+- Mapping from CYA field names: [CYA.md](CYA.md)
 - JSON Schemas: [`schema/`](schema/)
 - HTTP API (OpenAPI 3.1): [`openapi.yaml`](openapi.yaml)
 - Examples: [`examples/`](examples/)
 - Google Sheet templates, one per level: [`templates/google-sheet/`](templates/google-sheet/)
-- Validator: [`tools/validate.py`](tools/validate.py)
+- Validator: [`tools/validate.py`](tools/validate.py) (and `tools/build_examples.py`, which rebuilds every example and template from one sample fleet)
 
 ## Why
 
@@ -28,12 +29,12 @@ A CA decides how much each partner sees. Each level includes the levels below it
 
 | Level | Name | Scope | What the partner sees |
 |---|---|---|---|
-| 1 | Fleet | `fleet:read` | The yacht list: name, length, builder, guests, cabins |
+| 1 | Fleet | `fleet:read` | The boats: name, length, guests, cabins, plus any specs, amenities, toys, photos and brochure the CA adds |
 | 2 | Availability | `availability:read` | Busy periods per yacht: start, end, and booked / hold / unavailable |
 | 3 | Calendar | `calendar:read` | Full bookings: pickup and drop-off ports, timezone, hold expiry |
 | 4 | Seasons and rates | `rates:read` | Base port, cruising areas, relocation ports, turnaround, weekly rates, VAT, APA, terms |
 
-Access is granted with a **key**: one key per partner, carrying the levels the CA chose. Revoking the key ends the access. See [ACCESS-LEVELS.md](ACCESS-LEVELS.md).
+Access is granted with a **key**: one key per partner, carrying the level the CA chose and, if the CA wants, only some of its boats. Revoking the key ends the access. See [ACCESS-LEVELS.md](ACCESS-LEVELS.md).
 
 No level ever contains client names, charter fees paid, or any other personal data.
 
@@ -59,7 +60,7 @@ The validator checks a JSON feed (or a folder of sheet CSV exports) against the 
 
 ## Status
 
-Version 0.1, draft, 24 October 2026. Changes are proposed as issues or pull requests. Field names are stable from 1.0.
+Version 0.2, draft, 24 October 2026. 0.2 renamed fields to plain names and added full yacht specs. Changes are proposed as issues or pull requests. Field names are stable from 1.0.
 
 ## Licence
 

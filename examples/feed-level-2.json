@@ -1,33 +1,85 @@
 {
-  "standard": "yacht-calendar-standard/0.1",
+  "standard": "yacht-calendar-standard/0.2",
   "ca": "Example Yachts Ltd",
   "generated_at": "2026-10-24T09:00:00Z",
   "level": 2,
   "yachts": [
     {
-      "yacht_id": "EXY-001",
-      "yacht_name": "Blue Horizon",
+      "id": "EXY-001",
+      "name": "Blue Horizon",
       "cya_id": "aaaaaaaaaaaaaaaaaaaa0001",
-      "length_m": 38.4,
-      "builder": "Westport",
-      "year_built": 2008,
+      "previous_names": [
+        "Horizon Blue"
+      ],
       "type": "motor",
+      "builder": "Westport",
+      "model": "125",
+      "year": 2008,
+      "refit": 2023,
+      "flag": "Cayman Islands",
+      "length": 38.4,
+      "beam": 7.6,
+      "draft": 2.1,
+      "cruising_speed": 18,
+      "max_speed": 22,
+      "range": 1800,
+      "fuel_per_hour": 380,
       "guests": 10,
       "cabins": 5,
+      "cabin_types": {
+        "master": 1,
+        "vip": 1,
+        "double": 1,
+        "twin": 2
+      },
       "crew": 8,
+      "home_port": "Lefkas Marina, Greece",
+      "cruising_areas": [
+        "Ionian",
+        "Saronic"
+      ],
+      "air_conditioning": true,
+      "ac_at_night": true,
+      "diving": false,
+      "amenities": [
+        "Wi-Fi",
+        "Jacuzzi",
+        "Gym",
+        "Stabilisers at anchor"
+      ],
+      "toys": [
+        "Jet ski x2",
+        "Seabob",
+        "Paddleboard x2",
+        "Water skis"
+      ],
+      "description": "Tri-deck motor yacht with a beach club and a flybridge Jacuzzi.",
+      "crew_description": "Captain and crew of eight, together since 2021.",
+      "photos": [
+        "https://example.com/photos/blue-horizon-1.jpg",
+        "https://example.com/photos/blue-horizon-2.jpg"
+      ],
+      "videos": [
+        "https://example.com/videos/blue-horizon.mp4"
+      ],
+      "brochure": "https://example.com/brochures/blue-horizon.pdf",
       "updated_at": "2026-10-20T08:00:00Z"
     },
     {
-      "yacht_id": "EXY-002",
-      "yacht_name": "Kalimera",
-      "cya_id": null,
-      "length_m": 30.0,
-      "builder": "Bodrum Shipyard",
-      "year_built": 2019,
+      "id": "EXY-002",
+      "name": "Kalimera",
       "type": "gulet",
+      "builder": "Bodrum Shipyard",
+      "year": 2019,
+      "length": 30.0,
       "guests": 12,
       "cabins": 6,
+      "cabin_types": {
+        "double": 4,
+        "twin": 2
+      },
       "crew": 5,
+      "home_port": "Bodrum, Turkey",
       "updated_at": "2026-10-20T08:00:00Z"
     }
   ],
@@ -37,21 +89,21 @@
       "start": "2027-07-10T12:00",
       "end": "2027-07-17T12:00",
       "timezone": "Europe/Athens",
-      "category": "booked"
+      "status": "booked"
     },
     {
       "yacht_id": "EXY-001",
       "start": "2027-07-18T12:00",
       "end": "2027-07-25T12:00",
       "timezone": "Europe/Athens",
-      "category": "hold"
+      "status": "hold"
     },
     {
       "yacht_id": "EXY-002",
       "start": "2027-04-01T09:00",
       "end": "2027-05-15T18:00",
       "timezone": "Europe/Istanbul",
-      "category": "unavailable"
+      "status": "unavailable"
     }
   ]
 }

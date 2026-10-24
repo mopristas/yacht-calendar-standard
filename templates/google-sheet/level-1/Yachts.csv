@@ -1,3 +1,3 @@
-yacht_id,yacht_name,cya_id,length_m,builder,year_built,type,guests,cabins,crew,updated_at
-EXY-001,Blue Horizon,aaaaaaaaaaaaaaaaaaaa0001,38.4,Westport,2008,motor,10,5,8,2026-10-20T08:00:00Z
-EXY-002,Kalimera,,30.0,Bodrum Shipyard,2019,gulet,12,6,5,2026-10-20T08:00:00Z
+id,name,cya_id,previous_names,type,builder,model,year,refit,flag,length,beam,draft,cruising_speed,max_speed,range,fuel_per_hour,guests,cabins,cabin_types,crew,home_port,cruising_areas,air_conditioning,ac_at_night,diving,amenities,toys,description,crew_description,photos,videos,brochure,updated_at
+EXY-001,Blue Horizon,aaaaaaaaaaaaaaaaaaaa0001,Horizon Blue,motor,Westport,125,2008,2023,Cayman Islands,38.4,7.6,2.1,18,22,1800,380,10,5,master = 1; vip = 1; double = 1; twin = 2,8,"Lefkas Marina, Greece",Ionian; Saronic,yes,yes,no,Wi-Fi; Jacuzzi; Gym; Stabilisers at anchor,Jet ski x2; Seabob; Paddleboard x2; Water skis,Tri-deck motor yacht with a beach club and a flybridge Jacuzzi.,"Captain and crew of eight, together since 2021.",https://example.com/photos/blue-horizon-1.jpg; https://example.com/photos/blue-horizon-2.jpg,https://example.com/videos/blue-horizon.mp4,https://example.com/brochures/blue-horizon.pdf,2026-10-20T08:00:00Z
+EXY-002,Kalimera,,,gulet,Bodrum Shipyard,,2019,,,30.0,,,,,,,12,6,double = 4; twin = 2,5,"Bodrum, Turkey",,,,,,,,,,,,2026-10-20T08:00:00Z

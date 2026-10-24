@@ -10,13 +10,13 @@ Each level includes everything below it. A Level 3 key also returns Level 1 and 
 
 The yacht list ([`yacht`](schema/yacht.schema.json)). Enough for a broker to know the boat exists and match it to their own records.
 
-Returns: `yacht_id`, `yacht_name`, `cya_id`, `length_m`, `builder`, `year_built`, `type`, `guests`, `cabins`, `crew`, `updated_at`.
+Returns: `id`, `name`, `length`, `guests`, `cabins` (required), plus any specs the CA fills in: builder, year, beam, draft, speeds, cabin types, crew, home port, amenities, toys, description, photos, videos and brochure. See [SPEC.md](SPEC.md#2-yacht-level-1).
 
 ### Level 2: Availability (`availability:read`)
 
 Busy periods only ([`availability`](schema/availability.schema.json)). Answers "is she free on these dates?" and nothing more.
 
-Returns per busy period: `yacht_id`, `start`, `end`, `timezone`, `category` (`booked`, `hold` or `unavailable`).
+Returns per busy period: `yacht_id`, `start`, `end`, `timezone`, `status` (`booked`, `hold` or `unavailable`).
 
 No ports, no booking ids, no hold expiry. A CA that is careful about routes can stop here.
 
@@ -24,13 +24,13 @@ No ports, no booking ids, no hold expiry. A CA that is careful about routes can 
 
 Full bookings ([`booking`](schema/booking.schema.json)). Answers "where does she start and finish?", so a broker can offer a route the yacht is already doing.
 
-Adds: `booking_id`, `pickup_location`, `drop_off_location`, `hold_expires`, `updated_at`.
+Adds: booking `id`, `pickup`, `dropoff`, `hold_expires`, `updated_at`.
 
 ### Level 4: Seasons and rates (`rates:read`)
 
 Seasons ([`season`](schema/season.schema.json)): where the yacht is based, where she will go, and what she costs.
 
-Adds: `base_port`, `cruising_areas`, `relocation_ports`, `turnaround_hours`, `min_nights`, `currency`, weekly rates, `vat_percent`, `apa_percent`, `terms`, `holiday_rules`.
+Adds: `base_port`, `cruising_areas`, `relocation_ports`, `turnaround_hours`, `min_nights`, `currency`, `weekly_rate_from`, `weekly_rate_to`, `vat`, `apa`, `terms`, `holidays`.
 
 ### Never shared at any level
 
@@ -45,7 +45,8 @@ A key is how a CA grants a level to one partner.
 | One key per partner | So access can be revoked for one partner without touching the others |
 | The key carries its scopes | For example `fleet:read availability:read calendar:read` for Level 3 |
 | Sent as a bearer token | `Authorization: Bearer <key>` on every request |
-| Can be limited to some yachts | Optional: a key may cover only part of the fleet (for example one region) |
+| Can be limited to some yachts | Optional: the CA picks which boats the key covers (`yacht_ids`). Other boats never appear |
+| One level per key | For different levels on different boats, issue two keys |
 | Can expire | Optional: the CA sets an expiry date; the partner gets `401` after it |
 | Revocable at any time | The partner gets `401` from the next request on |
 

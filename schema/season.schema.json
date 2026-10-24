@@ -3,13 +3,13 @@
   "$id": "https://github.com/mopristas/yacht-calendar-standard/schema/season.schema.json",
   "title": "Season (Level 4: rates:read)",
   "type": "object",
-  "required": ["yacht_id", "title", "start_date", "end_date", "base_port", "cruising_areas", "turnaround_hours", "currency", "weekly_rate_low", "vat_percent", "apa_percent", "terms"],
+  "required": ["yacht_id", "name", "start", "end", "base_port", "cruising_areas", "turnaround_hours", "currency", "weekly_rate_from", "vat", "apa", "terms"],
   "additionalProperties": false,
   "properties": {
     "yacht_id": { "$ref": "common.schema.json#/$defs/id" },
-    "title": { "type": "string", "minLength": 1 },
-    "start_date": { "$ref": "common.schema.json#/$defs/date" },
-    "end_date": { "$ref": "common.schema.json#/$defs/date" },
+    "name": { "type": "string", "minLength": 1 },
+    "start": { "$ref": "common.schema.json#/$defs/date" },
+    "end": { "$ref": "common.schema.json#/$defs/date" },
     "base_port": { "$ref": "common.schema.json#/$defs/location" },
     "cruising_areas": { "type": "array", "items": { "type": "string", "minLength": 1 }, "minItems": 1 },
     "relocation_ports": {
@@ -25,13 +25,13 @@
       }
     },
     "turnaround_hours": { "type": "integer", "minimum": 0 },
-    "min_nights": { "type": ["integer", "null"], "minimum": 1 },
+    "min_nights": { "type": "integer", "minimum": 1 },
     "currency": { "$ref": "common.schema.json#/$defs/currency" },
-    "weekly_rate_low": { "type": "number", "minimum": 0 },
-    "weekly_rate_high": { "$ref": "common.schema.json#/$defs/money" },
-    "vat_percent": { "$ref": "common.schema.json#/$defs/percent" },
-    "apa_percent": { "$ref": "common.schema.json#/$defs/percent" },
+    "weekly_rate_from": { "$ref": "common.schema.json#/$defs/money" },
+    "weekly_rate_to": { "$ref": "common.schema.json#/$defs/money" },
+    "vat": { "$ref": "common.schema.json#/$defs/percent" },
+    "apa": { "$ref": "common.schema.json#/$defs/percent" },
     "terms": { "type": "string", "enum": ["plus_expenses", "inclusive", "all_inclusive"] },
-    "holiday_rules": { "type": ["string", "null"] }
+    "holidays": { "type": "string" }
   }
 }

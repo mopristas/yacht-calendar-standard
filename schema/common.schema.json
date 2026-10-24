@@ -6,13 +6,15 @@
     "id": { "type": "string", "minLength": 1, "maxLength": 64 },
     "cya_id": { "type": ["string", "null"], "pattern": "^[0-9a-f]{24}$" },
     "local_datetime": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}$" },
-    "utc_timestamp": { "type": ["string", "null"], "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}(:\\d{2})?Z$" },
+    "utc_timestamp": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}(:\\d{2})?Z$" },
     "date": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
     "timezone": { "type": "string", "pattern": "^[A-Za-z_]+(/[A-Za-z0-9_+-]+)+$|^UTC$" },
     "currency": { "type": "string", "pattern": "^[A-Z]{3}$" },
-    "money": { "type": ["number", "null"], "minimum": 0 },
+    "money": { "type": "number", "minimum": 0 },
     "percent": { "type": "number", "minimum": 0, "maximum": 100 },
     "location": { "type": "string", "pattern": "^.+, .+$" },
-    "category": { "type": "string", "enum": ["booked", "hold", "unavailable"] }
+    "url": { "type": "string", "pattern": "^https?://" },
+    "status": { "type": "string", "enum": ["booked", "hold", "unavailable"] },
+    "text_list": { "type": "array", "items": { "type": "string", "minLength": 1 } }
   }
 }

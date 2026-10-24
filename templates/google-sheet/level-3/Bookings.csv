@@ -1,4 +1,4 @@
-booking_id,yacht_id,category,start,end,timezone,pickup_location,drop_off_location,hold_expires,updated_at
+id,yacht_id,status,start,end,timezone,pickup,dropoff,hold_expires,updated_at
 BK-2027-0142,EXY-001,booked,2027-07-10T12:00,2027-07-17T12:00,Europe/Athens,"Argostoli, Greece","Zakynthos, Greece",,2026-10-24T09:00:00Z
 BK-2027-0150,EXY-001,hold,2027-07-18T12:00,2027-07-25T12:00,Europe/Athens,"Zakynthos, Greece","Lefkas Marina, Greece",2026-11-02T18:00:00Z,2026-10-24T09:00:00Z
 UN-2027-0003,EXY-002,unavailable,2027-04-01T09:00,2027-05-15T18:00,Europe/Istanbul,"Bodrum, Turkey","Bodrum, Turkey",,2026-10-22T14:30:00Z
