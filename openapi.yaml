@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Yacht Calendar Standard API
-  version: "0.3"
+  version: "0.4"
   description: >
     Read-only API a central agent (CA) serves so partners can read its fleet,
     availability, calendar and seasons. Each key carries the access levels the CA
@@ -41,8 +41,17 @@ components:
       type: object
       required: [error]
       properties:
-        error: { type: string, enum: [invalid_key, insufficient_scope, not_found] }
+        error: { type: string, enum: [invalid_key, insufficient_scope, not_found, bad_request] }
+        detail: { type: string }
         required: { type: string }
+    Answer:
+      type: object
+      required: [summary, rules]
+      description: Every AI-facing answer starts with a summary to relay and ends with the rules to follow
+      properties:
+        summary: { type: string }
+        rules: { type: array, items: { type: string } }
+      additionalProperties: true
     Access:
       type: object
       required: [profile, calendar, rates]
@@ -77,7 +86,7 @@ components:
         - type: object
           required: [secret]
           properties:
-            secret: { type: string, description: The bearer token. Shown once, never again }
+            secret: { type: string, description: "The bearer token. Shown once, never again" }
     Preview:
       type: object
       required: [recipient, yachts]
@@ -184,6 +193,43 @@ paths:
                   next_cursor: { type: [string, "null"] }
         "401": { $ref: "#/components/responses/InvalidKey" }
         "403": { $ref: "#/components/responses/InsufficientScope" }
+  /v1/search:
+    get:
+      summary: Which yachts are free on these dates (for AI assistants; same as the MCP tool search_available)
+      parameters:
+        - { name: start, in: query, required: true, schema: { type: string, format: date }, description: Embarkation date }
+        - { name: end, in: query, required: true, schema: { type: string, format: date }, description: Disembarkation date }
+        - { name: guests, in: query, schema: { type: integer }, description: Minimum guests }
+        - { name: area, in: query, schema: { type: string }, description: "Cruising area or port, e.g. Ionian" }
+        - { name: yacht_type, in: query, schema: { type: string, enum: [motor, sail, catamaran, power_catamaran, gulet, motor_sailer, other] } }
+        - { name: min_length, in: query, schema: { type: number }, description: Metres }
+        - { name: max_length, in: query, schema: { type: number }, description: Metres }
+        - { name: include_taken, in: query, schema: { type: boolean } }
+      responses:
+        "200": { description: "A summary line, counts, matching yachts (status free, on_hold, taken, no_calendar or beyond_window) and the rules to follow", content: { application/json: { schema: { $ref: "#/components/schemas/Answer" } } } }
+        "400": { description: Bad input, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
+        "401": { $ref: "#/components/responses/InvalidKey" }
+  /v1/routes:
+    get:
+      summary: Yachts already starting or ending at a port, or based or cruising in an area (same as the MCP tool find_routes)
+      parameters:
+        - { name: place, in: query, required: true, schema: { type: string }, description: "Port or area, e.g. Zakynthos" }
+        - { name: start, in: query, schema: { type: string, format: date } }
+        - { name: end, in: query, schema: { type: string, format: date } }
+      responses:
+        "200": { description: A summary line and matches, content: { application/json: { schema: { $ref: "#/components/schemas/Answer" } } } }
+        "401": { $ref: "#/components/responses/InvalidKey" }
+  /v1/rate:
+    get:
+      summary: The season and weekly rate for a yacht on a start date (same as the MCP tool get_rate)
+      parameters:
+        - { name: yacht, in: query, required: true, schema: { type: string }, description: Yacht id or name }
+        - { name: start, in: query, required: true, schema: { type: string, format: date } }
+        - { name: end, in: query, schema: { type: string, format: date } }
+      responses:
+        "200": { description: A summary line and the rate, content: { application/json: { schema: { $ref: "#/components/schemas/Answer" } } } }
+        "400": { description: Bad input, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
+        "401": { $ref: "#/components/responses/InvalidKey" }
   /v1/feed:
     get:
       summary: Everything this key may read, as one feed document
@@ -327,7 +373,7 @@ paths:
       summary: Issue a key to a recipient (scope admin)
       requestBody: { required: true, content: { application/json: { schema: { $ref: "#/components/schemas/AdminKey" } } } }
       responses:
-        "201": { description: Created; the secret is in this response only, content: { application/json: { schema: { $ref: "#/components/schemas/NewKey" } } } }
+        "201": { description: "Created; the secret is in this response only", content: { application/json: { schema: { $ref: "#/components/schemas/NewKey" } } } }
         "401": { $ref: "#/components/responses/InvalidKey" }
         "403": { $ref: "#/components/responses/InsufficientScope" }
   /v1/admin/keys/{id}:

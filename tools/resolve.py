@@ -11,6 +11,8 @@ each yacht's access and the shares that decided it. The rules are in SHARING.md.
 Standard library only.
 """
 import argparse
+import hashlib
+import hmac
 import json
 import sys
 from datetime import date, datetime, timezone
@@ -90,17 +92,35 @@ def active(share, today):
     return share.get("valid_from", "0000-00-00") <= today.isoformat() <= share.get("valid_until", "9999-12-31")
 
 
-def resolve_access(setup, feed, key_id, today):
-    """Return {yacht_id: {"profile", "calendar", "rates", "months_ahead", "shares"}} for one key."""
-    yachts = {y["id"]: y for y in feed["yachts"]}
-    recipients = check_setup(setup, set(yachts))
+def key_for_secret(setup, secret):
+    """The key whose secret_sha256 matches this bearer token, or None."""
+    digest = hashlib.sha256(secret.encode()).hexdigest()
+    return next((k for k in setup["keys"] if hmac.compare_digest(k.get("secret_sha256", ""), digest)), None)
+
+
+def usable_key(setup, key_id, today):
     key = next((k for k in setup["keys"] if k["id"] == key_id), None)
     now = datetime.combine(today, datetime.min.time(), tzinfo=timezone.utc)
     if key is None or key.get("revoked") or (
         key.get("expires_at") and datetime.strptime(key["expires_at"][:16], "%Y-%m-%dT%H:%M").replace(tzinfo=timezone.utc) < now
     ):
         raise SharingError("invalid_key")
-    recipient = recipients[key["recipient"]]
+    return key
+
+
+def resolve_access(setup, feed, key_id, today):
+    """Return {yacht_id: {"profile", "calendar", "rates", "months_ahead", "shares"}} for one key."""
+    check_setup(setup, {y["id"] for y in feed["yachts"]})
+    return access_for_recipient(setup, feed, usable_key(setup, key_id, today)["recipient"], today)
+
+
+def access_for_recipient(setup, feed, recipient_id, today):
+    """The same, for a recipient directly (used by previews and change diffs)."""
+    yachts = {y["id"]: y for y in feed["yachts"]}
+    recipients = check_setup(setup, set(yachts))
+    if recipient_id not in recipients:
+        raise SharingError(f"unknown recipient '{recipient_id}'")
+    recipient = recipients[recipient_id]
     company = recipients.get(recipient.get("company"), {})
     groups = set(recipient.get("groups", [])) | set(company.get("groups", []))
     sets = {s["id"]: s for s in setup["boat_sets"]}
@@ -142,9 +162,12 @@ def add_months(d, months):
 
 
 def build_feed(setup, feed, key_id, today, generated_at=None):
-    access = resolve_access(setup, feed, key_id, today)
+    return build_feed_for_access(setup, feed, resolve_access(setup, feed, key_id, today), today, generated_at)
+
+
+def build_feed_for_access(setup, feed, access, today, generated_at=None):
     out = {
-        "standard": "yacht-calendar-standard/0.3",
+        "standard": "yacht-calendar-standard/0.4",
         "ca": setup["publisher"]["name"],
         "generated_at": generated_at or datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "level": "per_yacht",
@@ -156,6 +179,8 @@ def build_feed(setup, feed, key_id, today, generated_at=None):
             continue
         record = dict(y) if a["profile"] == "full" else {k: y[k] for k in BASIC_FIELDS}
         record["access"] = {p: a[p] for p in PARTS}
+        if a["months_ahead"] and a["calendar"] != "none":
+            record["access"]["months_ahead"] = a["months_ahead"]
         out["yachts"].append(record)
 
     def in_window(period):

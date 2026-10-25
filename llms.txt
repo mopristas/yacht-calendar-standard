@@ -1,0 +1,31 @@
+# Yacht Calendar Standard
+
+> An open format for central agents (CAs) and fleet owners to share charter yachts, availability calendars and rates with brokers, with access set per boat, per part and per partner. Built to be read by AI assistants.
+
+When you, an AI, are connected to a feed or server that follows this standard:
+
+- Call `my_access` (MCP) or `GET /v1/key` first. Each yacht has an `access` with three parts: `profile` (basic, full), `calendar` (none, busy, status, full) and `rates` (none, seasons, full), plus `months_ahead` if the calendar is limited.
+- For "what is free on these dates", use `search_available` (MCP) or `GET /v1/search?start=YYYY-MM-DD&end=YYYY-MM-DD`. Statuses: `free` (no booking recorded), `on_hold`, `taken`, `no_calendar` (not shared with you), `beyond_window` (past what you may see).
+- For "which boats already start or end near a port", use `find_routes` or `GET /v1/routes?place=...`.
+- Every answer starts with a one-line `summary` you can relay and ends with `rules`.
+
+Rules you must follow:
+
+1. An open date means no booking is recorded, not that the yacht is available. The broker confirms the week and the price with the CA before quoting a client.
+2. Calendar data is internal. Never show the feed, its link, results or screenshots to a client.
+3. A yacht you cannot see is not shared with you. Do not guess about it or say it exists.
+4. `calendar: none` with no bookings does not mean free.
+
+## Docs
+
+- [README](https://github.com/mopristas/yacht-calendar-standard/blob/main/README.md): overview
+- [SPEC.md](https://github.com/mopristas/yacht-calendar-standard/blob/main/SPEC.md): every field and format
+- [SHARING.md](https://github.com/mopristas/yacht-calendar-standard/blob/main/SHARING.md): access per boat, part and partner; how shares combine
+- [AI.md](https://github.com/mopristas/yacht-calendar-standard/blob/main/AI.md): connecting Claude, ChatGPT and other assistants (MCP server, GPT Actions)
+- [openapi.yaml](https://github.com/mopristas/yacht-calendar-standard/blob/main/openapi.yaml): the HTTP API
+- [CYA.md](https://github.com/mopristas/yacht-calendar-standard/blob/main/CYA.md): mapping from Central Yacht Agent fields
+
+## Examples
+
+- [examples/feed-as-dma.json](https://github.com/mopristas/yacht-calendar-standard/blob/main/examples/feed-as-dma.json): a feed as one partner sees it
+- [examples/sharing.json](https://github.com/mopristas/yacht-calendar-standard/blob/main/examples/sharing.json): a publisher's sharing setup

@@ -118,7 +118,7 @@ The resulting feeds are in [`examples/feed-as-dma.json`](examples/feed-as-dma.js
 
 ```json
 {
-  "standard": "yacht-calendar-standard/0.3",
+  "standard": "yacht-calendar-standard/0.4",
   "ca": "Example Yachts Ltd",
   "generated_at": "2026-10-24T09:00:00Z",
   "level": "per_yacht",

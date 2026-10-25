@@ -94,7 +94,8 @@ def check_value(kind, v):
         "yacht_type": lambda: v in YACHT_TYPES,
         "status": lambda: v in STATUSES,
         "avail_status": lambda: v in STATUSES | {"busy"},
-        "access": lambda: isinstance(v, dict) and set(v) == set(ACCESS) and all(v[k] in ACCESS[k] for k in ACCESS),
+        "access": lambda: isinstance(v, dict) and set(ACCESS) <= set(v) <= set(ACCESS) | {"months_ahead"}
+        and all(v[k] in ACCESS[k] for k in ACCESS) and ("months_ahead" not in v or (_int(v["months_ahead"]) and v["months_ahead"] >= 1)),
         "terms": lambda: v in TERMS,
         "local_dt": lambda: isinstance(v, str) and LOCAL_DT.match(v),
         "utc": lambda: isinstance(v, str) and UTC_TS.match(v),
@@ -339,7 +340,7 @@ def csv_cell(field, raw, fields):
 
 def load_sheet_folder(folder):
     tabs = {"Yachts": "yachts", "Availability": "availability", "Bookings": "bookings", "Seasons": "seasons"}
-    feed = {"standard": "yacht-calendar-standard/0.3", "ca": folder.name,
+    feed = {"standard": "yacht-calendar-standard/0.4", "ca": folder.name,
             "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")}
     for tab, key in tabs.items():
         path = folder / f"{tab}.csv"

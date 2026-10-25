@@ -14,8 +14,10 @@ jobs:
           for f in examples/feed-level-*.json templates/google-sheet/level-*; do python3 tools/validate.py "$f"; done
       - name: Self-test
         run: python3 tools/selftest.py
-      - name: Examples against the JSON Schemas
+      - name: Examples against the JSON Schemas, OpenAPI file valid
         run: |
-          pip install -q "jsonschema>=4.18" referencing pyyaml
+          pip install -q "jsonschema>=4.18" referencing pyyaml openapi-spec-validator -r server/requirements.txt
           python3 tools/check_schemas.py
-          python3 -c "import yaml; yaml.safe_load(open('openapi.yaml'))"
+          python3 -c "import os; from openapi_spec_validator import validate; from openapi_spec_validator.readers import read_from_filename; d, _ = read_from_filename('openapi.yaml'); validate(d, base_uri='file://' + os.path.abspath('openapi.yaml'))"
+      - name: MCP server, in memory and over HTTP
+        run: python3 tools/test_mcp.py

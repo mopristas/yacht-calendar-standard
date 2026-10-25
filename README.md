@@ -15,6 +15,7 @@ Maintained by [DMA Yachting](https://dmayachting.com). Free to use and implement
 - Examples: [`examples/`](examples/)
 - Google Sheet templates, one per level: [`templates/google-sheet/`](templates/google-sheet/)
 - Reference resolver (what one key sees): [`tools/resolve.py`](tools/resolve.py)
+- **AI assistants (MCP server, ChatGPT Actions, llms.txt): [AI.md](AI.md)**
 - Validator: [`tools/validate.py`](tools/validate.py) (and `tools/build_examples.py`, which rebuilds every example and template from one sample fleet)
 
 ## Why
@@ -42,6 +43,12 @@ Access is granted with a **key**: one per person or system, belonging to one rec
 
 No level ever contains client names, charter fees paid, or any other personal data.
 
+## For AI assistants
+
+The standard is built to be read by AI. The MCP server in [`server/`](server/) plugs any feed into Claude, ChatGPT or any MCP client, with six read tools shaped like a broker's questions: `my_access`, `search_available` ("what is free 10 to 17 July for 10 in the Ionian?"), `find_routes` ("which boats finish in Zakynthos?"), `get_yacht`, `get_calendar` and `get_rate`. Every answer starts with a one-line summary and ends with the rules the AI must follow.
+
+A publisher can run the same server for all its partners at once: each request is answered for the key it carries, and admin tools let the publisher manage partners, groups and shares by asking its own AI ("share the Ionian boats with Top brokers, calendar only, until September"), with every change previewed before it is saved. See [AI.md](AI.md).
+
 ## Ways to publish (best first)
 
 | Option | What the CA does | Levels it can carry |
@@ -64,7 +71,7 @@ The validator checks a JSON feed (or a folder of sheet CSV exports) against the 
 
 ## Status
 
-Version 0.3, draft, 25 October 2026. 0.2 renamed fields to plain names and added full yacht specs. 0.3 added sharing per boat, per part and per partner, with groups ([SHARING.md](SHARING.md)) and a reference resolver. Changes are proposed as issues or pull requests. Field names are stable from 1.0.
+Version 0.4, draft, 25 October 2026. 0.4 added the MCP server, the AI endpoints (/v1/search, /v1/routes, /v1/rate), publisher admin and llms.txt. 0.2 renamed fields to plain names and added full yacht specs. 0.3 added sharing per boat, per part and per partner, with groups ([SHARING.md](SHARING.md)) and a reference resolver. Changes are proposed as issues or pull requests. Field names are stable from 1.0.
 
 ## Licence
 

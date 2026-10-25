@@ -94,4 +94,64 @@ leaky = copy.deepcopy(as_dma)
 leaky["bookings"].append(dict(full["bookings"][2]))
 check("validator catches a booking leaked to a busy-only yacht", bool(validate(leaky)[0]))
 
+# Query layer: the answers an AI relays
+import query  # noqa: E402
+qd, qm, qa = (query.normalise(json.loads((ROOT / f"examples/feed-as-{n}.json").read_text())) for n in ("dma", "maria", "acme"))
+r = query.search_available(qd, "2027-07-10", "2027-07-17", today=day)
+check("search: booked boat is taken, others free", r["counts"]["taken"] == 1 and r["counts"]["free"] == 2)
+check("search: summary carries the confirm-with-CA rule", "confirm with the CA" in r["summary"] and r["rules"])
+r = query.search_available(qd, "2027-07-03", "2027-07-10", today=day)
+bh = [y for y in r["yachts"] if y["id"] == "EXY-001"][0]
+check("search: full calendar shows where she goes next", "Argostoli" in bh.get("after", ""))
+check("search: weekly rate attached when shared", bh["rate"]["weekly_rate_from"] == 108000)
+check("search: hold shows as on_hold", query.search_available(qd, "2027-07-19", "2027-07-24", today=day)["counts"]["on_hold"] == 1)
+check("search: beyond the 18-month window is flagged",
+      query.search_available(qd, "2028-07-01", "2028-07-08", today=day)["counts"]["beyond_window"] == 1)
+check("search: guests filter", all(y["guests"] >= 11 for y in query.search_available(qd, "2027-09-01", "2027-09-08", guests=11, today=day)["yachts"]))
+routes = query.find_routes(qm, "Zakynthos", today=day)
+check("routes: finds the charter ending and starting in Zakynthos", {m["kind"] for m in routes["matches"]} >= {"ends_here", "starts_here"})
+check("routes: busy-only partner sees no ports", not query.find_routes(qa, "Zakynthos", today=day)["matches"])
+check("rates 'seasons' answer has no price", "not shared" in query.get_rate(qm, "Sirocco", "2027-07-03")["summary"])
+try:
+    query.get_yacht(qa, "Sirocco")
+    check("blocked yacht is unknown to the partner", False)
+except query.QueryError:
+    check("blocked yacht is unknown to the partner", True)
+
+# Admin: two-step changes on a copy of the setup
+import shutil  # noqa: E402
+import tempfile  # noqa: E402
+import admin  # noqa: E402
+tmp = Path(tempfile.mkdtemp()) / "sharing.json"
+shutil.copy(ROOT / "examples/sharing.json", tmp)
+share = {"id": "SH-9", "to": {"recipient": "R-ACME"}, "boats": {"yacht": "EXY-002"}, "profile": "full", "calendar": "full", "rates": "full"}
+plan = admin.upsert(tmp, full, "share", share, day)
+check("admin: preview names who changes", plan["changes"] == ["Acme Charters: Kalimera full / busy / none -> full / full / full"])
+check("admin: preview saves nothing", "SH-9" not in tmp.read_text())
+admin.upsert(tmp, full, "share", share, day, confirm=True)
+check("admin: confirm saves", "SH-9" in tmp.read_text())
+issued = admin.issue_key(tmp, full, "R-ACME", "test", day, confirm=True)
+from resolve import key_for_secret  # noqa: E402
+check("admin: issued secret resolves to its key", key_for_secret(admin.load(tmp), issued["secret"])["id"] == issued["record"]["id"])
+check("admin: secret is not stored", issued["secret"] not in tmp.read_text())
+admin.revoke_key(tmp, full, issued["record"]["id"], day, confirm=True)
+try:
+    resolve_access(admin.load(tmp), full, issued["record"]["id"], day)
+    check("admin: revoked key stops working", False)
+except SharingError:
+    check("admin: revoked key stops working", True)
+gone = admin.delete(tmp, full, "recipient", "R-ACME", day)
+check("admin: deleting a recipient removes its shares and keys, and reports lost access",
+      "share SH-4" in gone["summary"] and "key K-ACME-1" in gone["summary"] and "Acme Charters: removed" in gone["summary"])
+try:
+    admin.delete(tmp, full, "recipient", "R-DMA", day)
+    check("admin: a company with people cannot be deleted", False)
+except admin.AdminError:
+    check("admin: a company with people cannot be deleted", True)
+try:
+    admin.upsert(tmp, full, "share", {**share, "calendar": "everything"}, day)
+    check("admin: rejects a bad level", False)
+except admin.AdminError:
+    check("admin: rejects a bad level", True)
+
 sys.exit(1 if failed else 0)

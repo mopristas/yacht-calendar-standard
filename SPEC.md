@@ -1,6 +1,6 @@
 # Yacht Calendar Standard: Specification
 
-Version 0.3 (draft, 25 October 2026)
+Version 0.4 (draft, 25 October 2026)
 
 The key words MUST, SHOULD and MAY are used as in [RFC 2119](https://www.rfc-editor.org/rfc/rfc2119).
 
@@ -169,7 +169,7 @@ A JSON feed is one object. Schema: [`schema/feed.schema.json`](schema/feed.schem
 
 ```json
 {
-  "standard": "yacht-calendar-standard/0.3",
+  "standard": "yacht-calendar-standard/0.4",
   "ca": "Example Yachts Ltd",
   "generated_at": "2026-10-24T09:00:00Z",
   "level": 3,

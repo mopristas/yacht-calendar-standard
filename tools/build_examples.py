@@ -81,7 +81,7 @@ SEASONS = [
 
 # The publisher's sharing setup (SHARING.md). Never sent to recipients.
 SHARING = {
-    "standard": "yacht-calendar-standard/0.3",
+    "standard": "yacht-calendar-standard/0.4",
     "publisher": {"id": "PUB-EXY", "name": "Example Yachts Ltd"},
     "recipients": [
         {"id": "R-DMA", "type": "company", "name": "DMA Yachting", "groups": ["G-ALL", "G-TOP"]},
@@ -155,7 +155,7 @@ def write_json(path, data):
 
 
 def build():
-    head = {"standard": "yacht-calendar-standard/0.3", "ca": "Example Yachts Ltd", "generated_at": "2026-10-24T09:00:00Z"}
+    head = {"standard": "yacht-calendar-standard/0.4", "ca": "Example Yachts Ltd", "generated_at": "2026-10-24T09:00:00Z"}
     for level, lists in LEVEL_KEYS.items():
         write_json(ROOT / f"examples/feed-level-{level}.json", {**head, "level": level, **lists})
         folder = ROOT / f"templates/google-sheet/level-{level}"
