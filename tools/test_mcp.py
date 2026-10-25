@@ -134,6 +134,96 @@ def over_http():
         proc.wait(timeout=10)
 
 
+def oauth_flow():
+    import base64
+    import hashlib
+    import secrets
+    from urllib.parse import parse_qs, urlparse
+
+    tmp = Path(tempfile.mkdtemp())
+    shutil.copy(ROOT / "examples/sharing.json", tmp / "sharing.json")
+    full = query.load_source(str(ROOT / "examples/feed-level-4.json"))
+    issued = admin.issue_key(tmp / "sharing.json", full, "R-MARIA", "oauth test", date.fromisoformat(DAY), confirm=True)
+    maria, key_id = issued["secret"], issued["record"]["id"]
+    port = free_port()
+    base = f"http://127.0.0.1:{port}"
+    proc = subprocess.Popen([sys.executable, str(ROOT / "server/ycs_mcp.py"), "--sharing", str(tmp / "sharing.json"),
+                             "--feed", str(ROOT / "examples/feed-level-4.json"), "--transport", "http", "--port", str(port),
+                             "--public-url", base, "--today", DAY], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    try:
+        for _ in range(80):
+            try:
+                urllib.request.urlopen(base + "/llms.txt", timeout=1)
+                break
+            except OSError:
+                time.sleep(0.25)
+        h = httpx2.Client(timeout=30, follow_redirects=False)
+        meta = h.get(base + "/.well-known/oauth-authorization-server").json()
+        check("OAuth: metadata advertises register, authorize, token", all(k in meta for k in
+              ("registration_endpoint", "authorization_endpoint", "token_endpoint")))
+        redirect = "http://127.0.0.1:9/callback"
+        reg = h.post(base + "/register", json={"redirect_uris": [redirect], "token_endpoint_auth_method": "none",
+                                               "grant_types": ["authorization_code", "refresh_token"],
+                                               "response_types": ["code"], "client_name": "test connector"})
+        client_id = reg.json().get("client_id")
+        check("OAuth: dynamic client registration", reg.status_code in (200, 201) and client_id)
+        verifier = secrets.token_urlsafe(48)
+        challenge = base64.urlsafe_b64encode(hashlib.sha256(verifier.encode()).digest()).rstrip(b"=").decode()
+        auth = h.get(base + "/authorize", params={"response_type": "code", "client_id": client_id, "redirect_uri": redirect,
+                                                  "code_challenge": challenge, "code_challenge_method": "S256",
+                                                  "state": "st-123", "resource": base + "/mcp"})
+        loc = auth.headers.get("location", "")
+        check("OAuth: /authorize sends the user to our sign-in page", auth.status_code == 302 and loc.startswith("/oauth/signin?request="))
+        page = h.get(base + loc)
+        check("OAuth: sign-in page names the publisher and asks for the key",
+              page.status_code == 200 and "Example Yachts Ltd" in page.text and "Paste the key your central agent gave you" in page.text)
+        check("OAuth: sign-in page says which app is asking and where it goes back to",
+              "<b>test connector</b> is asking" in page.text and "go back to <b>127.0.0.1" in page.text)
+        request_id = parse_qs(urlparse(loc).query)["request"][0]
+        bad = h.post(base + "/oauth/signin", data={"request": request_id, "key": "not-a-key"})
+        check("OAuth: wrong key is 401 with a message", bad.status_code == 401 and "That key was not accepted." in bad.text)
+        good = h.post(base + "/oauth/signin", data={"request": request_id, "key": maria})
+        back = urlparse(good.headers.get("location", ""))
+        q = parse_qs(back.query)
+        check("OAuth: right key redirects to the client with code and state",
+              good.status_code == 302 and back.geturl().startswith(redirect) and q.get("state") == ["st-123"] and q.get("code"))
+        code = q["code"][0]
+        tok = h.post(base + "/token", data={"grant_type": "authorization_code", "code": code, "redirect_uri": redirect,
+                                             "client_id": client_id, "code_verifier": verifier}).json()
+        check("OAuth: /token returns access and refresh tokens", tok.get("access_token") and tok.get("refresh_token"))
+        again = h.post(base + "/token", data={"grant_type": "authorization_code", "code": code, "redirect_uri": redirect,
+                                               "client_id": client_id, "code_verifier": verifier})
+        check("OAuth: an auth code works once", again.status_code == 400)
+        access, refresh = tok["access_token"], tok["refresh_token"]
+        r = asyncio.run(mcp_call(base + "/mcp", access, "my_access", {}))
+        check("OAuth: MCP my_access with the access token answers for that key", "3 yachts" in r["summary"])
+        check("OAuth: REST /v1/key accepts the access token", get(base + "/v1/key", access)[0] == 200)
+        r = asyncio.run(mcp_call(base + "/mcp", maria, "my_access", {}))
+        check("OAuth: a raw key still works as a bearer", "3 yachts" in r["summary"])
+        new = h.post(base + "/token", data={"grant_type": "refresh_token", "refresh_token": refresh, "client_id": client_id}).json()
+        check("OAuth: refresh token gives a new access token", new.get("access_token") and new["access_token"] != access)
+        old = h.post(base + "/token", data={"grant_type": "refresh_token", "refresh_token": refresh, "client_id": client_id})
+        check("OAuth: the old refresh token no longer works", old.status_code == 400)
+        check("OAuth: the old access token no longer works after rotation", get(base + "/v1/key", access)[0] == 401)
+        access = new["access_token"]
+        check("OAuth: the new access token works", get(base + "/v1/key", access)[0] == 200)
+        stored = (tmp / "oauth-store.json").read_text(encoding="utf-8")
+        check("OAuth: store holds no plain code, token or key",
+              not any(v in stored for v in (code, access, refresh, new["refresh_token"], tok["access_token"], maria)))
+        admin.revoke_key(tmp / "sharing.json", full, key_id, date.fromisoformat(DAY), confirm=True)
+        check("OAuth: a token whose key was revoked is refused on the next request", get(base + "/v1/key", access)[0] == 401)
+        try:
+            asyncio.run(mcp_call(base + "/mcp", access, "my_access", {}))
+            refused = False
+        except Exception:
+            refused = True
+        check("OAuth: and so is the MCP endpoint", refused)
+    finally:
+        proc.terminate()
+        proc.wait(timeout=10)
+
+
 asyncio.run(in_memory())
 over_http()
+oauth_flow()
 sys.exit(1 if failed else 0)

@@ -71,7 +71,7 @@ The validator checks a JSON feed (or a folder of sheet CSV exports) against the 
 
 ## Status
 
-Version 0.4, draft, 25 October 2026. 0.4 added the MCP server, the AI endpoints (/v1/search, /v1/routes, /v1/rate), publisher admin and llms.txt. 0.2 renamed fields to plain names and added full yacht specs. 0.3 added sharing per boat, per part and per partner, with groups ([SHARING.md](SHARING.md)) and a reference resolver. Changes are proposed as issues or pull requests. Field names are stable from 1.0.
+Version 0.5, draft, 25 October 2026. 0.5 added OAuth 2.1 sign-in so Claude.ai and ChatGPT web connectors can connect. 0.4 added the MCP server, the AI endpoints (/v1/search, /v1/routes, /v1/rate), publisher admin and llms.txt. 0.2 renamed fields to plain names and added full yacht specs. 0.3 added sharing per boat, per part and per partner, with groups ([SHARING.md](SHARING.md)) and a reference resolver. Changes are proposed as issues or pull requests. Field names are stable from 1.0.
 
 ## Licence
 

@@ -83,7 +83,13 @@ python3 server/ycs_mcp.py --sharing sharing.json --feed full-feed.json --as-key 
 | ChatGPT custom GPT | Configure → Actions → import [`openapi.yaml`](openapi.yaml), set the server URL to `https://<host>`, Authentication: API key, Bearer, paste the key |
 | Other MCP clients | Streamable HTTP at `https://<host>/mcp` with an `Authorization: Bearer <key>` header |
 
-Claude.ai and ChatGPT web connectors sign users in with OAuth. The reference server checks bearer keys only; to offer it as a web connector, put it behind an OAuth proxy that maps each signed-in user to a key.
+Claude.ai and ChatGPT web connectors sign users in with OAuth 2.1, which the reference server includes. Start it in publisher mode over HTTP with `--public-url https://<host>` (the address people reach it at, behind HTTPS):
+
+```
+python3 server/ycs_mcp.py --sharing sharing.json --feed full-feed.json --transport http --public-url https://<host>
+```
+
+The server then registers connectors on the fly, serves the OAuth endpoints and metadata, and shows its own sign-in page. A user adds the connector URL `https://<host>/mcp` in Claude.ai (Settings > Connectors > Add custom connector) or in ChatGPT, is sent to the sign-in page, and pastes the key their central agent gave them, once. After that the connector refreshes its own tokens (access 1 hour, refresh 30 days). Tokens are tied to that key and checked on every request, so revoking the key cuts the connector off at once. OAuth state lives in `oauth-store.json` beside the sharing file (change with `--oauth-store`); only hashes of codes and tokens are stored. Bearer keys keep working as before.
 
 ## Suggested assistant instructions
 

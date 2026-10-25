@@ -10,6 +10,9 @@ Publisher mode: serve every recipient from your sharing setup. Each request is
 answered for the key in its Authorization header, so one server serves everyone.
     python3 server/ycs_mcp.py --sharing sharing.json --feed full-feed.json --transport http
     add --admin to expose the admin tools (needs YCS_ADMIN_SECRET over HTTP)
+    add --public-url https://host to turn on OAuth 2.1 sign-in (dynamic client registration, a sign-in page
+    where the user pastes their key) for Claude.ai and ChatGPT web connectors; raw keys keep working.
+    --oauth-store PATH keeps the OAuth state (default: oauth-store.json beside --sharing).
 
 Over HTTP the same server also answers the REST endpoints in openapi.yaml
 (/v1/key, /v1/feed, /v1/search, ...), which is what ChatGPT GPT Actions use.
@@ -31,10 +34,13 @@ import admin  # noqa: E402
 import query  # noqa: E402
 from resolve import SharingError, build_feed_for_access, access_for_recipient, check_setup, key_for_secret, usable_key  # noqa: E402
 
+from mcp.server.auth.settings import AuthSettings, ClientRegistrationOptions, RevocationOptions  # noqa: E402
 from mcp.server.mcpserver import Context, MCPServer  # noqa: E402
 from mcp.types import ToolAnnotations  # noqa: E402
 from starlette.requests import Request  # noqa: E402
 from starlette.responses import JSONResponse  # noqa: E402
+
+from oauth import YcsOAuthProvider, add_signin_routes  # noqa: E402
 
 INSTRUCTIONS = """Yacht charter fleet data from a central agent (CA), under the Yacht Calendar Standard.
 Start with my_access to see which yachts you can see and at what level. For "is anything free on these dates",
@@ -58,6 +64,7 @@ class Store:
 
     def __init__(self, args):
         self.args, self.ttl, self._cache = args, args.ttl, {}
+        self.oauth = None  # set by build_server when --public-url turns OAuth on
 
     def _cached(self, name, loader):
         hit = self._cache.get(name)
@@ -77,6 +84,13 @@ class Store:
         # Re-read every time in publisher mode: an admin change or a revoke takes effect at once.
         return admin.load(self.args.sharing)
 
+    def identify(self, bearer, setup):
+        """The key id a bearer stands for (OAuth token or raw secret), "admin" for the admin secret, else None."""
+        if self.oauth:
+            return self.oauth.identify(bearer, setup)
+        key = key_for_secret(setup, bearer)
+        return key["id"] if key else None
+
     def feed_for(self, bearer):
         """The normalised feed this caller may see."""
         if not self.args.sharing:
@@ -84,10 +98,9 @@ class Store:
         setup, full = self.setup(), self.full_feed()
         key_id = self.args.as_key
         if bearer:
-            key = key_for_secret(setup, bearer)
-            if key is None:
+            key_id = self.identify(bearer, setup)
+            if key_id is None or key_id == "admin":  # the admin secret opens the admin tools, not a recipient's feed
                 raise Denied(401, {"error": "invalid_key"})
-            key_id = key["id"]
         if not key_id:
             raise Denied(401, {"error": "invalid_key", "hint": "send Authorization: Bearer <key>"})
         try:
@@ -118,10 +131,26 @@ def bearer_of(request):
     return auth[7:].strip() if auth.lower().startswith("bearer ") else None
 
 
+def oauth_enabled(args):
+    return bool(args.public_url and args.sharing and args.transport == "http")
+
+
 def build_server(args):
     store = Store(args)
+    oauth_kwargs = {}
+    if oauth_enabled(args):
+        store.oauth = YcsOAuthProvider(
+            args.oauth_store or Path(args.sharing).resolve().parent / "oauth-store.json", store.setup, store.today,
+            os.environ.get("YCS_ADMIN_SECRET") or None)
+        public = args.public_url.rstrip("/")
+        oauth_kwargs = {"auth_server_provider": store.oauth, "auth": AuthSettings(
+            issuer_url=public, resource_server_url=public + "/mcp", validate_token_resource=False,
+            client_registration_options=ClientRegistrationOptions(enabled=True),
+            revocation_options=RevocationOptions(enabled=True))}
     server = MCPServer(name="yacht-calendar-standard", title="Yacht calendars", instructions=INSTRUCTIONS,
-                       version="0.4", website_url="https://github.com/mopristas/yacht-calendar-standard")
+                       version="0.4", website_url="https://github.com/mopristas/yacht-calendar-standard", **oauth_kwargs)
+    if store.oauth:
+        add_signin_routes(server, store.oauth, lambda: store.full_feed().get("ca") or "the central agent")
 
     def feed(ctx):
         return store.feed_for(bearer_of(request_of(ctx)))
@@ -188,7 +217,11 @@ def add_admin_tools(server, store, args):
         request = request_of(ctx)
         if request is not None:  # over HTTP: only the publisher's admin secret
             given = bearer_of(request) or ""
-            if not admin_secret or not hmac.compare_digest(given, admin_secret):
+            if store.oauth:
+                is_admin = store.oauth.identify(given, store.setup()) == "admin"
+            else:
+                is_admin = bool(admin_secret) and hmac.compare_digest(given.encode(), admin_secret.encode())
+            if not is_admin:
                 return {"summary": "Admin tools need the publisher's admin key.", "error": "insufficient_scope", "required": "admin"}
         try:
             return fn()
@@ -320,6 +353,8 @@ def parse_args(argv):
     pub.add_argument("--sharing", help="Your sharing setup (schema/sharing.schema.json)")
     pub.add_argument("--feed", help="Your full level 4 feed (any source form)")
     pub.add_argument("--as-key", help="stdio only: answer as this key id (for testing a recipient's view)")
+    pub.add_argument("--public-url", help="https://host this server is reached at; turns on OAuth sign-in (needs --transport http)")
+    pub.add_argument("--oauth-store", help="OAuth state file (default: oauth-store.json beside --sharing)")
     pub.add_argument("--admin", action="store_true", help="Add the admin tools")
     ap.add_argument("--transport", choices=["stdio", "http"], default="stdio")
     ap.add_argument("--host", default="127.0.0.1")
@@ -331,6 +366,8 @@ def parse_args(argv):
         ap.error("give either --source (partner mode) or --sharing and --feed (publisher mode)")
     if args.sharing and not args.feed:
         ap.error("--sharing needs --feed")
+    if args.public_url and not (args.sharing and args.transport == "http"):
+        ap.error("--public-url needs publisher mode and --transport http")
     if args.admin and not args.sharing:
         ap.error("--admin needs publisher mode")
     if args.admin and args.transport == "http" and not os.environ.get("YCS_ADMIN_SECRET"):
