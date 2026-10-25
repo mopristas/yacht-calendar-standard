@@ -7,6 +7,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from validate import load_sheet_folder, validate  # noqa: E402
+from resolve import SharingError, build_feed, resolve_access  # noqa: E402
+from datetime import date  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 failed = 0
@@ -42,5 +44,54 @@ for label, breaker in BAD.items():
     breaker(bad)
     errors, _, _ = validate(bad)
     check(f"catches: {label}", bool(errors))
+
+# Sharing: the worked example in SHARING.md
+setup = json.loads((ROOT / "examples/sharing.json").read_text())
+full = base
+day = date(2026, 10, 24)
+
+
+def access(key, when=day, s=setup):
+    return {y: (a["profile"], a["calendar"], a["rates"]) for y, a in resolve_access(s, full, key, when).items()}
+
+
+dma, maria, acme = access("K-DMA-1"), access("K-MARIA-1"), access("K-ACME-1")
+check("group shares add up: DMA gets the Ionian boat in full", dma["EXY-001"] == ("full", "full", "full"))
+check("everyone else's boats stay busy-only", dma["EXY-002"] == ("full", "busy", "none"))
+check("person beats company: Maria sees Sirocco with status and seasons", maria["EXY-007"] == ("full", "status", "seasons"))
+check("person share does not leak to her company", dma["EXY-007"] == ("full", "busy", "none"))
+check("block hides the boat completely", "EXY-007" not in acme)
+check("Maria's share ends on valid_until", access("K-MARIA-1", date(2027, 10, 1))["EXY-007"] == ("full", "busy", "none"))
+as_dma = build_feed(setup, full, "K-DMA-1", day, "2026-10-24T09:00:00Z")
+check("18-month window drops the 2028 booking", "BK-2028-0007" not in [b["id"] for b in as_dma["bookings"]])
+check("busy hides booked/hold", {a["status"] for a in as_dma["availability"]} == {"busy"})
+as_maria = build_feed(setup, full, "K-MARIA-1", day, "2026-10-24T09:00:00Z")
+sirocco_season = [x for x in as_maria["seasons"] if x["yacht_id"] == "EXY-007"][0]
+check("rates 'seasons' strips prices", "weekly_rate_from" not in sirocco_season)
+for name, f in (("dma", as_dma), ("maria", as_maria)):
+    check(f"resolved feed for {name} validates", not validate(f)[0])
+
+basic = copy.deepcopy(setup)
+basic["shares"][0]["profile"] = "basic"
+y = [x for x in build_feed(basic, full, "K-ACME-1", day)["yachts"] if x["id"] == "EXY-002"][0]
+check("profile 'basic' keeps only the five core fields", set(y) == {"id", "name", "length", "guests", "cabins", "access"})
+
+for label, breaker in {
+    "revoked key": lambda s: s["keys"][2].update(revoked=True),
+    "expired key": lambda s: s["keys"][2].update(expires_at="2026-01-01T00:00:00Z"),
+    "share to an unknown group": lambda s: s["shares"][0]["to"].update(group="G-NOPE"),
+    "half a block": lambda s: s["shares"][3].update(calendar="busy"),
+}.items():
+    broken = copy.deepcopy(setup)
+    breaker(broken)
+    try:
+        resolve_access(broken, full, "K-ACME-1", day)
+        check(f"rejects: {label}", False)
+    except SharingError:
+        check(f"rejects: {label}", True)
+
+leaky = copy.deepcopy(as_dma)
+leaky["bookings"].append(dict(full["bookings"][2]))
+check("validator catches a booking leaked to a busy-only yacht", bool(validate(leaky)[0]))
 
 sys.exit(1 if failed else 0)

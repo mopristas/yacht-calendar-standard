@@ -1,0 +1,141 @@
+{
+  "standard": "yacht-calendar-standard/0.3",
+  "publisher": {
+    "id": "PUB-EXY",
+    "name": "Example Yachts Ltd"
+  },
+  "recipients": [
+    {
+      "id": "R-DMA",
+      "type": "company",
+      "name": "DMA Yachting",
+      "groups": [
+        "G-ALL",
+        "G-TOP"
+      ]
+    },
+    {
+      "id": "R-MARIA",
+      "type": "person",
+      "name": "Maria K.",
+      "company": "R-DMA"
+    },
+    {
+      "id": "R-ACME",
+      "type": "company",
+      "name": "Acme Charters",
+      "groups": [
+        "G-ALL"
+      ]
+    }
+  ],
+  "groups": [
+    {
+      "id": "G-ALL",
+      "name": "All partners"
+    },
+    {
+      "id": "G-TOP",
+      "name": "Top brokers",
+      "note": "Booked 10+ weeks with us in the last two seasons"
+    }
+  ],
+  "boat_sets": [
+    {
+      "id": "S-ALL",
+      "name": "Whole fleet",
+      "rule": {
+        "all": true
+      }
+    },
+    {
+      "id": "S-IONIAN",
+      "name": "Ionian fleet",
+      "rule": {
+        "cruising_area": "Ionian"
+      }
+    },
+    {
+      "id": "S-VIP",
+      "name": "Owner's private boats",
+      "yacht_ids": [
+        "EXY-007"
+      ]
+    }
+  ],
+  "shares": [
+    {
+      "id": "SH-1",
+      "to": {
+        "group": "G-ALL"
+      },
+      "boats": {
+        "set": "S-ALL"
+      },
+      "profile": "full",
+      "calendar": "busy",
+      "rates": "none"
+    },
+    {
+      "id": "SH-2",
+      "to": {
+        "group": "G-TOP"
+      },
+      "boats": {
+        "set": "S-IONIAN"
+      },
+      "profile": "full",
+      "calendar": "full",
+      "rates": "full",
+      "calendar_window": {
+        "months_ahead": 18
+      }
+    },
+    {
+      "id": "SH-3",
+      "to": {
+        "recipient": "R-MARIA"
+      },
+      "boats": {
+        "yacht": "EXY-007"
+      },
+      "profile": "full",
+      "calendar": "status",
+      "rates": "seasons",
+      "valid_until": "2027-09-30",
+      "note": "Maria is working the Sirocco owner's referral"
+    },
+    {
+      "id": "SH-4",
+      "to": {
+        "recipient": "R-ACME"
+      },
+      "boats": {
+        "set": "S-VIP"
+      },
+      "profile": "none",
+      "calendar": "none",
+      "rates": "none"
+    }
+  ],
+  "keys": [
+    {
+      "id": "K-DMA-1",
+      "recipient": "R-DMA",
+      "label": "DMA AI assistant",
+      "expires_at": null
+    },
+    {
+      "id": "K-MARIA-1",
+      "recipient": "R-MARIA",
+      "label": "Maria's AI assistant",
+      "expires_at": null
+    },
+    {
+      "id": "K-ACME-1",
+      "recipient": "R-ACME",
+      "label": "Acme booking system",
+      "expires_at": "2027-12-31T23:59:59Z"
+    }
+  ]
+}

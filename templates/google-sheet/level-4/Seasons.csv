@@ -1,3 +1,4 @@
 yacht_id,name,start,end,base_port,cruising_areas,relocation_ports,turnaround_hours,min_nights,currency,weekly_rate_from,weekly_rate_to,vat,apa,terms,holidays
 EXY-001,High Season,2027-07-01,2027-08-31,"Lefkas Marina, Greece",Ionian,"Corfu, Greece = 4500; Zakynthos, Greece",24,7,EUR,108000,120000,5.2,35,plus_expenses,
 EXY-002,Summer,2027-05-16,2027-10-15,"Bodrum, Turkey",Turkish Riviera; Dodecanese,"Göcek, Turkey = 2000",24,7,EUR,28000,,0,20,inclusive,"Kurban Bayrami week 16-23 May 2027, flat 32000"
+EXY-007,Summer,2027-06-01,2027-09-30,"Athens, Greece",Saronic; Cyclades,,48,7,EUR,145000,,5.2,30,plus_expenses,

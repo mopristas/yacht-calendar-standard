@@ -3,35 +3,137 @@
   "$id": "https://github.com/mopristas/yacht-calendar-standard/schema/season.schema.json",
   "title": "Season (Level 4: rates:read)",
   "type": "object",
-  "required": ["yacht_id", "name", "start", "end", "base_port", "cruising_areas", "turnaround_hours", "currency", "weekly_rate_from", "vat", "apa", "terms"],
+  "required": [
+    "yacht_id",
+    "name",
+    "start",
+    "end",
+    "base_port",
+    "cruising_areas",
+    "turnaround_hours"
+  ],
   "additionalProperties": false,
   "properties": {
-    "yacht_id": { "$ref": "common.schema.json#/$defs/id" },
-    "name": { "type": "string", "minLength": 1 },
-    "start": { "$ref": "common.schema.json#/$defs/date" },
-    "end": { "$ref": "common.schema.json#/$defs/date" },
-    "base_port": { "$ref": "common.schema.json#/$defs/location" },
-    "cruising_areas": { "type": "array", "items": { "type": "string", "minLength": 1 }, "minItems": 1 },
+    "yacht_id": {
+      "$ref": "common.schema.json#/$defs/id"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "start": {
+      "$ref": "common.schema.json#/$defs/date"
+    },
+    "end": {
+      "$ref": "common.schema.json#/$defs/date"
+    },
+    "base_port": {
+      "$ref": "common.schema.json#/$defs/location"
+    },
+    "cruising_areas": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 1
+    },
     "relocation_ports": {
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["port"],
+        "required": [
+          "port"
+        ],
         "additionalProperties": false,
         "properties": {
-          "port": { "$ref": "common.schema.json#/$defs/location" },
-          "fee": { "$ref": "common.schema.json#/$defs/money" }
+          "port": {
+            "$ref": "common.schema.json#/$defs/location"
+          },
+          "fee": {
+            "$ref": "common.schema.json#/$defs/money"
+          }
         }
       }
     },
-    "turnaround_hours": { "type": "integer", "minimum": 0 },
-    "min_nights": { "type": "integer", "minimum": 1 },
-    "currency": { "$ref": "common.schema.json#/$defs/currency" },
-    "weekly_rate_from": { "$ref": "common.schema.json#/$defs/money" },
-    "weekly_rate_to": { "$ref": "common.schema.json#/$defs/money" },
-    "vat": { "$ref": "common.schema.json#/$defs/percent" },
-    "apa": { "$ref": "common.schema.json#/$defs/percent" },
-    "terms": { "type": "string", "enum": ["plus_expenses", "inclusive", "all_inclusive"] },
-    "holidays": { "type": "string" }
-  }
+    "turnaround_hours": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "min_nights": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "currency": {
+      "$ref": "common.schema.json#/$defs/currency"
+    },
+    "weekly_rate_from": {
+      "$ref": "common.schema.json#/$defs/money"
+    },
+    "weekly_rate_to": {
+      "$ref": "common.schema.json#/$defs/money"
+    },
+    "vat": {
+      "$ref": "common.schema.json#/$defs/percent"
+    },
+    "apa": {
+      "$ref": "common.schema.json#/$defs/percent"
+    },
+    "terms": {
+      "type": "string",
+      "enum": [
+        "plus_expenses",
+        "inclusive",
+        "all_inclusive"
+      ]
+    },
+    "holidays": {
+      "type": "string"
+    }
+  },
+  "dependentRequired": {
+    "currency": [
+      "currency",
+      "weekly_rate_from",
+      "vat",
+      "apa",
+      "terms"
+    ],
+    "weekly_rate_from": [
+      "currency",
+      "weekly_rate_from",
+      "vat",
+      "apa",
+      "terms"
+    ],
+    "weekly_rate_to": [
+      "currency",
+      "weekly_rate_from",
+      "vat",
+      "apa",
+      "terms"
+    ],
+    "vat": [
+      "currency",
+      "weekly_rate_from",
+      "vat",
+      "apa",
+      "terms"
+    ],
+    "apa": [
+      "currency",
+      "weekly_rate_from",
+      "vat",
+      "apa",
+      "terms"
+    ],
+    "terms": [
+      "currency",
+      "weekly_rate_from",
+      "vat",
+      "apa",
+      "terms"
+    ]
+  },
+  "description": "Price fields (currency, weekly_rate_from, vat, apa, terms) come all together or not at all: a recipient with rates level 'seasons' gets the season without prices."
 }

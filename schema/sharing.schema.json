@@ -1,0 +1,119 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/mopristas/yacht-calendar-standard/schema/sharing.schema.json",
+  "title": "Sharing setup (publisher side, never sent to recipients)",
+  "description": "Who sees which yachts, and how much of each part. See SHARING.md.",
+  "type": "object",
+  "required": ["standard", "publisher", "recipients", "groups", "boat_sets", "shares", "keys"],
+  "additionalProperties": false,
+  "$defs": {
+    "id": { "$ref": "common.schema.json#/$defs/id" },
+    "date": { "$ref": "common.schema.json#/$defs/date" },
+    "recipient": {
+      "type": "object",
+      "required": ["id", "type", "name"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "type": { "enum": ["company", "person"] },
+        "name": { "type": "string", "minLength": 1 },
+        "company": { "$ref": "#/$defs/id", "description": "For a person: the company recipient they belong to. They inherit its shares" },
+        "groups": { "type": "array", "items": { "$ref": "#/$defs/id" } },
+        "note": { "type": "string" }
+      }
+    },
+    "group": {
+      "type": "object",
+      "required": ["id", "name"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "name": { "type": "string", "minLength": 1 },
+        "note": { "type": "string" }
+      }
+    },
+    "boat_set": {
+      "type": "object",
+      "required": ["id", "name"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "name": { "type": "string", "minLength": 1 },
+        "yacht_ids": { "type": "array", "items": { "$ref": "#/$defs/id" }, "description": "A fixed list" },
+        "rule": {
+          "type": "object",
+          "description": "A rule; every condition given must match. Re-evaluated on every request, so new boats join automatically",
+          "additionalProperties": false,
+          "properties": {
+            "all": { "const": true },
+            "cruising_area": { "type": "string" },
+            "type": { "enum": ["motor", "sail", "catamaran", "power_catamaran", "gulet", "motor_sailer", "other"] },
+            "min_length": { "type": "number" },
+            "max_length": { "type": "number" },
+            "min_guests": { "type": "integer" }
+          }
+        }
+      },
+      "oneOf": [{ "required": ["yacht_ids"] }, { "required": ["rule"] }]
+    },
+    "share": {
+      "type": "object",
+      "required": ["id", "to", "boats", "profile", "calendar", "rates"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "to": {
+          "type": "object",
+          "oneOf": [
+            { "required": ["group"], "properties": { "group": { "$ref": "#/$defs/id" } }, "additionalProperties": false },
+            { "required": ["recipient"], "properties": { "recipient": { "$ref": "#/$defs/id" } }, "additionalProperties": false }
+          ]
+        },
+        "boats": {
+          "type": "object",
+          "oneOf": [
+            { "required": ["set"], "properties": { "set": { "$ref": "#/$defs/id" } }, "additionalProperties": false },
+            { "required": ["yacht"], "properties": { "yacht": { "$ref": "#/$defs/id" } }, "additionalProperties": false }
+          ]
+        },
+        "profile": { "enum": ["none", "basic", "full"] },
+        "calendar": { "enum": ["none", "busy", "status", "full"] },
+        "rates": { "enum": ["none", "seasons", "full"] },
+        "calendar_window": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": { "months_ahead": { "type": "integer", "minimum": 1, "maximum": 60 } }
+        },
+        "valid_from": { "$ref": "#/$defs/date" },
+        "valid_until": { "$ref": "#/$defs/date" },
+        "note": { "type": "string", "description": "Internal only" }
+      }
+    },
+    "key": {
+      "type": "object",
+      "required": ["id", "recipient"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "recipient": { "$ref": "#/$defs/id" },
+        "label": { "type": "string" },
+        "expires_at": { "type": ["string", "null"], "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}(:\\d{2})?Z$" },
+        "revoked": { "type": "boolean" }
+      }
+    }
+  },
+  "properties": {
+    "standard": { "type": "string", "pattern": "^yacht-calendar-standard/\\d+\\.\\d+$" },
+    "publisher": {
+      "type": "object",
+      "required": ["id", "name"],
+      "additionalProperties": false,
+      "properties": { "id": { "$ref": "#/$defs/id" }, "name": { "type": "string", "minLength": 1 } }
+    },
+    "recipients": { "type": "array", "items": { "$ref": "#/$defs/recipient" } },
+    "groups": { "type": "array", "items": { "$ref": "#/$defs/group" } },
+    "boat_sets": { "type": "array", "items": { "$ref": "#/$defs/boat_set" } },
+    "shares": { "type": "array", "items": { "$ref": "#/$defs/share" } },
+    "keys": { "type": "array", "items": { "$ref": "#/$defs/key" } }
+  }
+}

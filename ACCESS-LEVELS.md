@@ -1,36 +1,36 @@
 # Access levels and keys
 
-The CA owns the data and decides who sees what. This page defines the four levels and how keys carry them.
+The publisher owns the data and decides who sees what. There are two ways to do that:
 
-## The levels
+- **Simple:** one preset level for a whole feed, link or key. Below.
+- **Per boat, per part, per partner, with groups:** [SHARING.md](SHARING.md). The presets are shortcuts for the same settings.
 
-Each level includes everything below it. A Level 3 key also returns Level 1 and Level 2 data.
+## The preset levels
 
-### Level 1: Fleet (`fleet:read`)
+Each level includes everything below it.
 
-The yacht list ([`yacht`](schema/yacht.schema.json)). Enough for a broker to know the boat exists and match it to their own records.
+| Level | Scope | `profile` | `calendar` | `rates` |
+|---|---|---|---|---|
+| 1. Fleet | `fleet:read` | full | none | none |
+| 2. Availability | `availability:read` | full | status | none |
+| 3. Calendar | `calendar:read` | full | full | none |
+| 4. Seasons and rates | `rates:read` | full | full | full |
 
-Returns: `id`, `name`, `length`, `guests`, `cabins` (required), plus any specs the CA fills in: builder, year, beam, draft, speeds, cabin types, crew, home port, amenities, toys, description, photos, videos and brochure. See [SPEC.md](SPEC.md#2-yacht-level-1).
+### Level 1: Fleet
 
-### Level 2: Availability (`availability:read`)
+The yacht list ([`yacht`](schema/yacht.schema.json)): `id`, `name`, `length`, `guests`, `cabins` (required), plus any specs the publisher fills in: builder, year, beam, draft, speeds, cabin types, crew, home port, amenities, toys, description, photos, videos and brochure. See [SPEC.md](SPEC.md#2-yacht-level-1).
 
-Busy periods only ([`availability`](schema/availability.schema.json)). Answers "is she free on these dates?" and nothing more.
+### Level 2: Availability
 
-Returns per busy period: `yacht_id`, `start`, `end`, `timezone`, `status` (`booked`, `hold` or `unavailable`).
+Busy periods ([`availability`](schema/availability.schema.json)): `yacht_id`, `start`, `end`, `timezone`, `status` (`booked`, `hold` or `unavailable`). No ports, no booking ids, no hold expiry.
 
-No ports, no booking ids, no hold expiry. A CA that is careful about routes can stop here.
+### Level 3: Calendar
 
-### Level 3: Calendar (`calendar:read`)
+Full bookings ([`booking`](schema/booking.schema.json)). Adds booking `id`, `pickup`, `dropoff`, `hold_expires`, `updated_at`, so a broker can offer a route the yacht is already doing.
 
-Full bookings ([`booking`](schema/booking.schema.json)). Answers "where does she start and finish?", so a broker can offer a route the yacht is already doing.
+### Level 4: Seasons and rates
 
-Adds: booking `id`, `pickup`, `dropoff`, `hold_expires`, `updated_at`.
-
-### Level 4: Seasons and rates (`rates:read`)
-
-Seasons ([`season`](schema/season.schema.json)): where the yacht is based, where she will go, and what she costs.
-
-Adds: `base_port`, `cruising_areas`, `relocation_ports`, `turnaround_hours`, `min_nights`, `currency`, `weekly_rate_from`, `weekly_rate_to`, `vat`, `apa`, `terms`, `holidays`.
+Seasons ([`season`](schema/season.schema.json)) with prices: `base_port`, `cruising_areas`, `relocation_ports`, `turnaround_hours`, `min_nights`, `currency`, `weekly_rate_from`, `weekly_rate_to`, `vat`, `apa`, `terms`, `holidays`.
 
 ### Never shared at any level
 
@@ -38,16 +38,12 @@ Client names, contact details, charter fees actually paid, commission, owner det
 
 ## Keys
 
-A key is how a CA grants a level to one partner.
-
 | Rule | |
 |---|---|
-| One key per partner | So access can be revoked for one partner without touching the others |
-| The key carries its scopes | For example `fleet:read availability:read calendar:read` for Level 3 |
+| One key per person or system | Revoke one without touching the others |
+| Belongs to one recipient | Sees what that recipient's shares add up to ([SHARING.md](SHARING.md#how-shares-combine)) |
 | Sent as a bearer token | `Authorization: Bearer <key>` on every request |
-| Can be limited to some yachts | Optional: the CA picks which boats the key covers (`yacht_ids`). Other boats never appear |
-| One level per key | For different levels on different boats, issue two keys |
-| Can expire | Optional: the CA sets an expiry date; the partner gets `401` after it |
+| Can expire | The partner gets `401` after it |
 | Revocable at any time | The partner gets `401` from the next request on |
 
 ### Responses
@@ -55,31 +51,30 @@ A key is how a CA grants a level to one partner.
 | Situation | HTTP status | Body |
 |---|---|---|
 | No key, unknown key, expired or revoked key | `401` | `{"error": "invalid_key"}` |
-| Valid key, endpoint needs a higher level | `403` | `{"error": "insufficient_scope", "required": "calendar:read"}` |
-| Valid key, yacht outside the key's fleet | `404` | `{"error": "not_found"}` (do not reveal that the yacht exists) |
+| Valid key, no yacht shared at the level this endpoint needs | `403` | `{"error": "insufficient_scope", "required": "calendar:read"}` |
+| Valid key, yacht not shared with this key | `404` | `{"error": "not_found"}` (never reveal that the yacht exists) |
 
 ### Telling the partner what the key can do
 
-`GET /v1/key` returns the key's own grant, so a partner (or their AI assistant) can see what it may ask for:
+`GET /v1/key` returns the key's own access, per yacht, so a partner (or their AI assistant) knows what it may ask for:
 
 ```json
 {
   "ca": "Example Yachts Ltd",
-  "partner": "DMA Yachting",
-  "level": 3,
-  "scopes": ["fleet:read", "availability:read", "calendar:read"],
-  "yacht_ids": null,
-  "expires_at": "2027-12-31T23:59:59Z"
+  "recipient": "Maria K.",
+  "expires_at": null,
+  "yachts": [
+    { "id": "EXY-001", "access": { "profile": "full", "calendar": "full", "rates": "full" }, "months_ahead": 18 },
+    { "id": "EXY-007", "access": { "profile": "full", "calendar": "status", "rates": "seasons" }, "months_ahead": null }
+  ]
 }
 ```
-
-`yacht_ids: null` means the whole fleet.
 
 ## Levels outside the HTTP API
 
 | Route | How the level is set |
 |---|---|
-| JSON feed URL | One secret URL per level (for example `.../feed?key=...`). The feed's `level` field states it |
+| JSON feed URL | One secret URL per recipient. The feed's `level` field states it (`1`-`4` or `per_yacht`) |
 | Google Sheet | By which tabs the shared sheet contains: `Yachts` = 1, plus `Availability` = 2, `Bookings` instead = 3, plus `Seasons` = 4 |
 | iCal | Busy events only = 2. With `LOCATION` and `UID` filled = 3 |
 

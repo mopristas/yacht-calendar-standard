@@ -4,54 +4,181 @@
   "title": "Yacht (Level 1: fleet:read)",
   "description": "Lengths in metres, speeds in knots, range in nautical miles, fuel in litres per hour.",
   "type": "object",
-  "required": ["id", "name", "length", "guests", "cabins"],
+  "required": [
+    "id",
+    "name",
+    "length",
+    "guests",
+    "cabins"
+  ],
   "additionalProperties": false,
   "properties": {
-    "id": { "$ref": "common.schema.json#/$defs/id" },
-    "name": { "type": "string", "minLength": 1 },
-    "cya_id": { "$ref": "common.schema.json#/$defs/cya_id" },
-    "previous_names": { "$ref": "common.schema.json#/$defs/text_list" },
-    "type": { "type": "string", "enum": ["motor", "sail", "catamaran", "power_catamaran", "gulet", "motor_sailer", "other"] },
-    "builder": { "type": "string" },
-    "model": { "type": "string" },
-    "year": { "type": "integer", "minimum": 1850, "maximum": 2100 },
-    "refit": { "type": "integer", "minimum": 1850, "maximum": 2100 },
-    "flag": { "type": "string" },
-    "length": { "type": "number", "exclusiveMinimum": 0 },
-    "beam": { "type": "number", "exclusiveMinimum": 0 },
-    "draft": { "type": "number", "exclusiveMinimum": 0 },
-    "cruising_speed": { "type": "number", "minimum": 0 },
-    "max_speed": { "type": "number", "minimum": 0 },
-    "range": { "type": "number", "minimum": 0 },
-    "fuel_per_hour": { "type": "number", "minimum": 0 },
-    "guests": { "type": "integer", "minimum": 1 },
-    "cabins": { "type": "integer", "minimum": 0 },
+    "id": {
+      "$ref": "common.schema.json#/$defs/id"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "cya_id": {
+      "$ref": "common.schema.json#/$defs/cya_id"
+    },
+    "previous_names": {
+      "$ref": "common.schema.json#/$defs/text_list"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "motor",
+        "sail",
+        "catamaran",
+        "power_catamaran",
+        "gulet",
+        "motor_sailer",
+        "other"
+      ]
+    },
+    "builder": {
+      "type": "string"
+    },
+    "model": {
+      "type": "string"
+    },
+    "year": {
+      "type": "integer",
+      "minimum": 1850,
+      "maximum": 2100
+    },
+    "refit": {
+      "type": "integer",
+      "minimum": 1850,
+      "maximum": 2100
+    },
+    "flag": {
+      "type": "string"
+    },
+    "length": {
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
+    "beam": {
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
+    "draft": {
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
+    "cruising_speed": {
+      "type": "number",
+      "minimum": 0
+    },
+    "max_speed": {
+      "type": "number",
+      "minimum": 0
+    },
+    "range": {
+      "type": "number",
+      "minimum": 0
+    },
+    "fuel_per_hour": {
+      "type": "number",
+      "minimum": 0
+    },
+    "guests": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "cabins": {
+      "type": "integer",
+      "minimum": 0
+    },
     "cabin_types": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "master": { "type": "integer", "minimum": 0 },
-        "vip": { "type": "integer", "minimum": 0 },
-        "double": { "type": "integer", "minimum": 0 },
-        "twin": { "type": "integer", "minimum": 0 },
-        "single": { "type": "integer", "minimum": 0 },
-        "bunk": { "type": "integer", "minimum": 0 },
-        "convertible": { "type": "integer", "minimum": 0 }
+        "master": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "vip": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "double": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "twin": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "single": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "bunk": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "convertible": {
+          "type": "integer",
+          "minimum": 0
+        }
       }
     },
-    "crew": { "type": "integer", "minimum": 0 },
-    "home_port": { "$ref": "common.schema.json#/$defs/location" },
-    "cruising_areas": { "$ref": "common.schema.json#/$defs/text_list" },
-    "air_conditioning": { "type": "boolean" },
-    "ac_at_night": { "type": "boolean" },
-    "diving": { "type": "boolean" },
-    "amenities": { "$ref": "common.schema.json#/$defs/text_list" },
-    "toys": { "$ref": "common.schema.json#/$defs/text_list" },
-    "description": { "type": "string" },
-    "crew_description": { "type": "string" },
-    "photos": { "type": "array", "items": { "$ref": "common.schema.json#/$defs/url" } },
-    "videos": { "type": "array", "items": { "$ref": "common.schema.json#/$defs/url" } },
-    "brochure": { "$ref": "common.schema.json#/$defs/url" },
-    "updated_at": { "$ref": "common.schema.json#/$defs/utc_timestamp" }
+    "crew": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "home_port": {
+      "$ref": "common.schema.json#/$defs/location"
+    },
+    "cruising_areas": {
+      "$ref": "common.schema.json#/$defs/text_list"
+    },
+    "air_conditioning": {
+      "type": "boolean"
+    },
+    "ac_at_night": {
+      "type": "boolean"
+    },
+    "diving": {
+      "type": "boolean"
+    },
+    "amenities": {
+      "$ref": "common.schema.json#/$defs/text_list"
+    },
+    "toys": {
+      "$ref": "common.schema.json#/$defs/text_list"
+    },
+    "description": {
+      "type": "string"
+    },
+    "crew_description": {
+      "type": "string"
+    },
+    "photos": {
+      "type": "array",
+      "items": {
+        "$ref": "common.schema.json#/$defs/url"
+      }
+    },
+    "videos": {
+      "type": "array",
+      "items": {
+        "$ref": "common.schema.json#/$defs/url"
+      }
+    },
+    "brochure": {
+      "$ref": "common.schema.json#/$defs/url"
+    },
+    "updated_at": {
+      "$ref": "common.schema.json#/$defs/utc_timestamp"
+    },
+    "access": {
+      "$ref": "common.schema.json#/$defs/access",
+      "description": "Only in per_yacht feeds: what this recipient may see of this yacht"
+    }
   }
 }

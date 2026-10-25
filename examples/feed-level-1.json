@@ -1,5 +1,5 @@
 {
-  "standard": "yacht-calendar-standard/0.2",
+  "standard": "yacht-calendar-standard/0.3",
   "ca": "Example Yachts Ltd",
   "generated_at": "2026-10-24T09:00:00Z",
   "level": 1,
@@ -81,6 +81,23 @@
       "crew": 5,
       "home_port": "Bodrum, Turkey",
       "updated_at": "2026-10-20T08:00:00Z"
+    },
+    {
+      "id": "EXY-007",
+      "name": "Sirocco",
+      "type": "sail",
+      "builder": "Perini Navi",
+      "year": 2012,
+      "length": 45.0,
+      "guests": 10,
+      "cabins": 5,
+      "crew": 9,
+      "home_port": "Athens, Greece",
+      "cruising_areas": [
+        "Saronic",
+        "Cyclades"
+      ],
+      "updated_at": "2026-10-21T10:00:00Z"
     }
   ]
 }

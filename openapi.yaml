@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Yacht Calendar Standard API
-  version: "0.1"
+  version: "0.3"
   description: >
     Read-only API a central agent (CA) serves so partners can read its fleet,
     availability, calendar and seasons. Each key carries the access levels the CA
@@ -20,8 +20,9 @@ components:
       type: http
       scheme: bearer
       description: >
-        One key per partner. Scopes: fleet:read (level 1), availability:read (level 2),
-        calendar:read (level 3), rates:read (level 4). Each level includes the ones below it.
+        One key per person or system, belonging to one recipient. What it sees is set per yacht
+        by the publisher's shares (SHARING.md); /v1/key lists it. Admin endpoints need a
+        publisher key with scope admin.
   parameters:
     from: { name: from, in: query, schema: { type: string, format: date }, description: Return periods that end on or after this date }
     to: { name: to, in: query, schema: { type: string, format: date }, description: Return periods that start on or before this date }
@@ -42,16 +43,57 @@ components:
       properties:
         error: { type: string, enum: [invalid_key, insufficient_scope, not_found] }
         required: { type: string }
+    Access:
+      type: object
+      required: [profile, calendar, rates]
+      properties:
+        profile: { enum: [basic, full] }
+        calendar: { enum: [none, busy, status, full] }
+        rates: { enum: [none, seasons, full] }
     Key:
       type: object
-      required: [ca, partner, level, scopes, yacht_ids, expires_at]
+      required: [ca, recipient, expires_at, yachts]
       properties:
         ca: { type: string }
-        partner: { type: string }
-        level: { type: integer, enum: [1, 2, 3, 4] }
-        scopes: { type: array, items: { type: string, enum: ["fleet:read", "availability:read", "calendar:read", "rates:read"] } }
-        yacht_ids: { type: [array, "null"], items: { type: string }, description: null = the whole fleet }
+        recipient: { type: string }
         expires_at: { type: [string, "null"], format: date-time }
+        yachts:
+          type: array
+          items:
+            type: object
+            required: [id, access, months_ahead]
+            properties:
+              id: { type: string }
+              access: { $ref: "#/components/schemas/Access" }
+              months_ahead: { type: [integer, "null"], description: null = no limit }
+    Recipient: { $ref: "schema/sharing.schema.json#/$defs/recipient" }
+    Group: { $ref: "schema/sharing.schema.json#/$defs/group" }
+    BoatSet: { $ref: "schema/sharing.schema.json#/$defs/boat_set" }
+    Share: { $ref: "schema/sharing.schema.json#/$defs/share" }
+    AdminKey: { $ref: "schema/sharing.schema.json#/$defs/key" }
+    NewKey:
+      allOf:
+        - { $ref: "schema/sharing.schema.json#/$defs/key" }
+        - type: object
+          required: [secret]
+          properties:
+            secret: { type: string, description: The bearer token. Shown once, never again }
+    Preview:
+      type: object
+      required: [recipient, yachts]
+      properties:
+        recipient: { type: string }
+        yachts:
+          type: array
+          items:
+            type: object
+            required: [id, shared]
+            properties:
+              id: { type: string }
+              shared: { type: boolean }
+              access: { $ref: "#/components/schemas/Access" }
+              months_ahead: { type: [integer, "null"] }
+              shares: { type: array, items: { type: string }, description: The shares that decided this yacht }
     Yacht: { $ref: "schema/yacht.schema.json" }
     Availability: { $ref: "schema/availability.schema.json" }
     Booking: { $ref: "schema/booking.schema.json" }
@@ -60,7 +102,7 @@ components:
 paths:
   /v1/key:
     get:
-      summary: What this key can read
+      summary: What this key can read, per yacht
       responses:
         "200": { description: The key's grant, content: { application/json: { schema: { $ref: "#/components/schemas/Key" } } } }
         "401": { $ref: "#/components/responses/InvalidKey" }
@@ -148,3 +190,151 @@ paths:
       responses:
         "200": { description: A feed at the key's level, content: { application/json: { schema: { $ref: "#/components/schemas/Feed" } } } }
         "401": { $ref: "#/components/responses/InvalidKey" }
+  /v1/admin/preview:
+    get:
+      summary: What a key or recipient would see, per yacht, and which shares decided it (scope admin)
+      parameters:
+        - { name: key, in: query, schema: { type: string } }
+        - { name: recipient, in: query, schema: { type: string } }
+      responses:
+        "200": { description: Per-yacht access, content: { application/json: { schema: { $ref: "#/components/schemas/Preview" } } } }
+        "401": { $ref: "#/components/responses/InvalidKey" }
+        "403": { $ref: "#/components/responses/InsufficientScope" }
+  /v1/admin/recipients:
+    get:
+      summary: List companies and people (scope admin)
+      responses:
+        "200": { description: List, content: { application/json: { schema: { type: object, properties: { items: { type: array, items: { $ref: "#/components/schemas/Recipient" } } } } } } }
+        "401": { $ref: "#/components/responses/InvalidKey" }
+        "403": { $ref: "#/components/responses/InsufficientScope" }
+    post:
+      summary: Create one of the companies and people (scope admin)
+      requestBody: { required: true, content: { application/json: { schema: { $ref: "#/components/schemas/Recipient" } } } }
+      responses:
+        "201": { description: Created, content: { application/json: { schema: { $ref: "#/components/schemas/Recipient" } } } }
+        "401": { $ref: "#/components/responses/InvalidKey" }
+        "403": { $ref: "#/components/responses/InsufficientScope" }
+  /v1/admin/recipients/{id}:
+    parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+    put:
+      summary: Replace one of the companies and people (scope admin)
+      requestBody: { required: true, content: { application/json: { schema: { $ref: "#/components/schemas/Recipient" } } } }
+      responses:
+        "200": { description: Updated, content: { application/json: { schema: { $ref: "#/components/schemas/Recipient" } } } }
+        "401": { $ref: "#/components/responses/InvalidKey" }
+        "403": { $ref: "#/components/responses/InsufficientScope" }
+    delete:
+      summary: Delete one of the companies and people (scope admin)
+      responses:
+        "204": { description: Deleted }
+        "401": { $ref: "#/components/responses/InvalidKey" }
+        "403": { $ref: "#/components/responses/InsufficientScope" }
+  /v1/admin/groups:
+    get:
+      summary: List groups (scope admin)
+      responses:
+        "200": { description: List, content: { application/json: { schema: { type: object, properties: { items: { type: array, items: { $ref: "#/components/schemas/Group" } } } } } } }
+        "401": { $ref: "#/components/responses/InvalidKey" }
+        "403": { $ref: "#/components/responses/InsufficientScope" }
+    post:
+      summary: Create one of the groups (scope admin)
+      requestBody: { required: true, content: { application/json: { schema: { $ref: "#/components/schemas/Group" } } } }
+      responses:
+        "201": { description: Created, content: { application/json: { schema: { $ref: "#/components/schemas/Group" } } } }
+        "401": { $ref: "#/components/responses/InvalidKey" }
+        "403": { $ref: "#/components/responses/InsufficientScope" }
+  /v1/admin/groups/{id}:
+    parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+    put:
+      summary: Replace one of the groups (scope admin)
+      requestBody: { required: true, content: { application/json: { schema: { $ref: "#/components/schemas/Group" } } } }
+      responses:
+        "200": { description: Updated, content: { application/json: { schema: { $ref: "#/components/schemas/Group" } } } }
+        "401": { $ref: "#/components/responses/InvalidKey" }
+        "403": { $ref: "#/components/responses/InsufficientScope" }
+    delete:
+      summary: Delete one of the groups (scope admin)
+      responses:
+        "204": { description: Deleted }
+        "401": { $ref: "#/components/responses/InvalidKey" }
+        "403": { $ref: "#/components/responses/InsufficientScope" }
+  /v1/admin/boat-sets:
+    get:
+      summary: List boat sets (scope admin)
+      responses:
+        "200": { description: List, content: { application/json: { schema: { type: object, properties: { items: { type: array, items: { $ref: "#/components/schemas/BoatSet" } } } } } } }
+        "401": { $ref: "#/components/responses/InvalidKey" }
+        "403": { $ref: "#/components/responses/InsufficientScope" }
+    post:
+      summary: Create one of the boat sets (scope admin)
+      requestBody: { required: true, content: { application/json: { schema: { $ref: "#/components/schemas/BoatSet" } } } }
+      responses:
+        "201": { description: Created, content: { application/json: { schema: { $ref: "#/components/schemas/BoatSet" } } } }
+        "401": { $ref: "#/components/responses/InvalidKey" }
+        "403": { $ref: "#/components/responses/InsufficientScope" }
+  /v1/admin/boat-sets/{id}:
+    parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+    put:
+      summary: Replace one of the boat sets (scope admin)
+      requestBody: { required: true, content: { application/json: { schema: { $ref: "#/components/schemas/BoatSet" } } } }
+      responses:
+        "200": { description: Updated, content: { application/json: { schema: { $ref: "#/components/schemas/BoatSet" } } } }
+        "401": { $ref: "#/components/responses/InvalidKey" }
+        "403": { $ref: "#/components/responses/InsufficientScope" }
+    delete:
+      summary: Delete one of the boat sets (scope admin)
+      responses:
+        "204": { description: Deleted }
+        "401": { $ref: "#/components/responses/InvalidKey" }
+        "403": { $ref: "#/components/responses/InsufficientScope" }
+  /v1/admin/shares:
+    get:
+      summary: List shares (scope admin)
+      responses:
+        "200": { description: List, content: { application/json: { schema: { type: object, properties: { items: { type: array, items: { $ref: "#/components/schemas/Share" } } } } } } }
+        "401": { $ref: "#/components/responses/InvalidKey" }
+        "403": { $ref: "#/components/responses/InsufficientScope" }
+    post:
+      summary: Create one of the shares (scope admin)
+      requestBody: { required: true, content: { application/json: { schema: { $ref: "#/components/schemas/Share" } } } }
+      responses:
+        "201": { description: Created, content: { application/json: { schema: { $ref: "#/components/schemas/Share" } } } }
+        "401": { $ref: "#/components/responses/InvalidKey" }
+        "403": { $ref: "#/components/responses/InsufficientScope" }
+  /v1/admin/shares/{id}:
+    parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+    put:
+      summary: Replace one of the shares (scope admin)
+      requestBody: { required: true, content: { application/json: { schema: { $ref: "#/components/schemas/Share" } } } }
+      responses:
+        "200": { description: Updated, content: { application/json: { schema: { $ref: "#/components/schemas/Share" } } } }
+        "401": { $ref: "#/components/responses/InvalidKey" }
+        "403": { $ref: "#/components/responses/InsufficientScope" }
+    delete:
+      summary: Delete one of the shares (scope admin)
+      responses:
+        "204": { description: Deleted }
+        "401": { $ref: "#/components/responses/InvalidKey" }
+        "403": { $ref: "#/components/responses/InsufficientScope" }
+  /v1/admin/keys:
+    get:
+      summary: List keys, without secrets (scope admin)
+      responses:
+        "200": { description: List, content: { application/json: { schema: { type: object, properties: { items: { type: array, items: { $ref: "#/components/schemas/AdminKey" } } } } } } }
+        "401": { $ref: "#/components/responses/InvalidKey" }
+        "403": { $ref: "#/components/responses/InsufficientScope" }
+    post:
+      summary: Issue a key to a recipient (scope admin)
+      requestBody: { required: true, content: { application/json: { schema: { $ref: "#/components/schemas/AdminKey" } } } }
+      responses:
+        "201": { description: Created; the secret is in this response only, content: { application/json: { schema: { $ref: "#/components/schemas/NewKey" } } } }
+        "401": { $ref: "#/components/responses/InvalidKey" }
+        "403": { $ref: "#/components/responses/InsufficientScope" }
+  /v1/admin/keys/{id}:
+    parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+    delete:
+      summary: Revoke a key (scope admin)
+      responses:
+        "204": { description: Revoked }
+        "401": { $ref: "#/components/responses/InvalidKey" }
+        "403": { $ref: "#/components/responses/InsufficientScope" }

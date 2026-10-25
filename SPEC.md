@@ -1,6 +1,6 @@
 # Yacht Calendar Standard: Specification
 
-Version 0.2 (draft, 24 October 2026)
+Version 0.3 (draft, 25 October 2026)
 
 The key words MUST, SHOULD and MAY are used as in [RFC 2119](https://www.rfc-editor.org/rfc/rfc2119).
 
@@ -117,7 +117,7 @@ One record per busy period. Schema: [`schema/availability.schema.json`](schema/a
 | `start` | MUST | Local date-time | `2027-07-10T12:00` | |
 | `end` | MUST | Local date-time | `2027-07-17T12:00` | After `start` |
 | `timezone` | MUST | Timezone | `Europe/Athens` | |
-| `status` | MUST | Enum | `booked` | `booked`, `hold` or `unavailable` (shipyard, owner use, crew leave, delivery) |
+| `status` | MUST | Enum | `booked` | `booked`, `hold` or `unavailable` (shipyard, owner use, crew leave, delivery). In a `per_yacht` feed, `busy` for a yacht whose calendar level is `busy` |
 
 A Level 2 feed is a Level 3 feed with the Level 3 fields removed. A CA that serves Level 3 does not need to build Level 2 separately.
 
@@ -141,6 +141,8 @@ One record per booked or held period, with the ports. Schema: [`schema/booking.s
 ## 5. Season (Level 4)
 
 One record per season per yacht. Schema: [`schema/season.schema.json`](schema/season.schema.json).
+
+The price fields (`currency`, `weekly_rate_from`, `vat`, `apa`, `terms`) come all together or not at all. A level 4 feed MUST include them; a recipient whose rates level is `seasons` ([SHARING.md](SHARING.md)) gets the season without them.
 
 | Field | Required | Type | Example | Notes |
 |---|---|---|---|---|
@@ -167,7 +169,7 @@ A JSON feed is one object. Schema: [`schema/feed.schema.json`](schema/feed.schem
 
 ```json
 {
-  "standard": "yacht-calendar-standard/0.2",
+  "standard": "yacht-calendar-standard/0.3",
   "ca": "Example Yachts Ltd",
   "generated_at": "2026-10-24T09:00:00Z",
   "level": 3,
@@ -182,6 +184,9 @@ A JSON feed is one object. Schema: [`schema/feed.schema.json`](schema/feed.schem
 | 2 | `yachts`, `availability` | `bookings`, `seasons` |
 | 3 | `yachts`, `bookings` | `availability`, `seasons` |
 | 4 | `yachts`, `bookings`, `seasons` | `availability` |
+| `per_yacht` | `yachts`, each with `access`; then whichever lists the access calls for | Anything a yacht's `access` does not allow |
+
+`per_yacht` feeds are what a recipient gets when the publisher shares per boat; see [SHARING.md](SHARING.md#the-feed-a-recipient-receives).
 
 Full examples for every level are in [`examples/`](examples/).
 

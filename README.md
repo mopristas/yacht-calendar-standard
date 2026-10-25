@@ -8,11 +8,13 @@ Maintained by [DMA Yachting](https://dmayachting.com). Free to use and implement
 
 - Specification: [SPEC.md](SPEC.md)
 - Access levels and keys: [ACCESS-LEVELS.md](ACCESS-LEVELS.md)
+- Sharing per boat, per part and per partner, with groups: [SHARING.md](SHARING.md)
 - Mapping from CYA field names: [CYA.md](CYA.md)
 - JSON Schemas: [`schema/`](schema/)
 - HTTP API (OpenAPI 3.1): [`openapi.yaml`](openapi.yaml)
 - Examples: [`examples/`](examples/)
 - Google Sheet templates, one per level: [`templates/google-sheet/`](templates/google-sheet/)
+- Reference resolver (what one key sees): [`tools/resolve.py`](tools/resolve.py)
 - Validator: [`tools/validate.py`](tools/validate.py) (and `tools/build_examples.py`, which rebuilds every example and template from one sample fleet)
 
 ## Why
@@ -23,9 +25,11 @@ A yacht calendar that a broker can read directly means:
 - A broker can offer a yacht on a route she is already doing, for example a charter already set to start in Kefalonia and end in Zakynthos.
 - The CA gets fewer, better enquiries: only for boats that are actually free.
 
-## Access levels
+## Who sees what
 
-A CA decides how much each partner sees. Each level includes the levels below it.
+The publisher decides, per boat and per partner, how much of each part a partner sees: the boat's profile, its calendar, and its rates. Partners can be put in groups ("Top brokers"), boats in sets ("Ionian fleet", or a rule like "over 40 m"), and any one company or person can get more, or less, than their group. See [SHARING.md](SHARING.md).
+
+For a simple setup there are four preset levels; each includes the levels below it.
 
 | Level | Name | Scope | What the partner sees |
 |---|---|---|---|
@@ -34,7 +38,7 @@ A CA decides how much each partner sees. Each level includes the levels below it
 | 3 | Calendar | `calendar:read` | Full bookings: pickup and drop-off ports, timezone, hold expiry |
 | 4 | Seasons and rates | `rates:read` | Base port, cruising areas, relocation ports, turnaround, weekly rates, VAT, APA, terms |
 
-Access is granted with a **key**: one key per partner, carrying the level the CA chose and, if the CA wants, only some of its boats. Revoking the key ends the access. See [ACCESS-LEVELS.md](ACCESS-LEVELS.md).
+Access is granted with a **key**: one per person or system, belonging to one recipient. Revoking the key ends the access. See [ACCESS-LEVELS.md](ACCESS-LEVELS.md).
 
 No level ever contains client names, charter fees paid, or any other personal data.
 
@@ -60,7 +64,7 @@ The validator checks a JSON feed (or a folder of sheet CSV exports) against the 
 
 ## Status
 
-Version 0.2, draft, 24 October 2026. 0.2 renamed fields to plain names and added full yacht specs. Changes are proposed as issues or pull requests. Field names are stable from 1.0.
+Version 0.3, draft, 25 October 2026. 0.2 renamed fields to plain names and added full yacht specs. 0.3 added sharing per boat, per part and per partner, with groups ([SHARING.md](SHARING.md)) and a reference resolver. Changes are proposed as issues or pull requests. Field names are stable from 1.0.
 
 ## Licence
 

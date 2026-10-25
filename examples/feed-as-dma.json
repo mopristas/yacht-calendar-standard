@@ -1,0 +1,188 @@
+{
+  "standard": "yacht-calendar-standard/0.3",
+  "ca": "Example Yachts Ltd",
+  "generated_at": "2026-10-24T09:00:00Z",
+  "level": "per_yacht",
+  "yachts": [
+    {
+      "id": "EXY-001",
+      "name": "Blue Horizon",
+      "cya_id": "aaaaaaaaaaaaaaaaaaaa0001",
+      "previous_names": [
+        "Horizon Blue"
+      ],
+      "type": "motor",
+      "builder": "Westport",
+      "model": "125",
+      "year": 2008,
+      "refit": 2023,
+      "flag": "Cayman Islands",
+      "length": 38.4,
+      "beam": 7.6,
+      "draft": 2.1,
+      "cruising_speed": 18,
+      "max_speed": 22,
+      "range": 1800,
+      "fuel_per_hour": 380,
+      "guests": 10,
+      "cabins": 5,
+      "cabin_types": {
+        "master": 1,
+        "vip": 1,
+        "double": 1,
+        "twin": 2
+      },
+      "crew": 8,
+      "home_port": "Lefkas Marina, Greece",
+      "cruising_areas": [
+        "Ionian",
+        "Saronic"
+      ],
+      "air_conditioning": true,
+      "ac_at_night": true,
+      "diving": false,
+      "amenities": [
+        "Wi-Fi",
+        "Jacuzzi",
+        "Gym",
+        "Stabilisers at anchor"
+      ],
+      "toys": [
+        "Jet ski x2",
+        "Seabob",
+        "Paddleboard x2",
+        "Water skis"
+      ],
+      "description": "Tri-deck motor yacht with a beach club and a flybridge Jacuzzi.",
+      "crew_description": "Captain and crew of eight, together since 2021.",
+      "photos": [
+        "https://example.com/photos/blue-horizon-1.jpg",
+        "https://example.com/photos/blue-horizon-2.jpg"
+      ],
+      "videos": [
+        "https://example.com/videos/blue-horizon.mp4"
+      ],
+      "brochure": "https://example.com/brochures/blue-horizon.pdf",
+      "updated_at": "2026-10-20T08:00:00Z",
+      "access": {
+        "profile": "full",
+        "calendar": "full",
+        "rates": "full"
+      }
+    },
+    {
+      "id": "EXY-002",
+      "name": "Kalimera",
+      "type": "gulet",
+      "builder": "Bodrum Shipyard",
+      "year": 2019,
+      "length": 30.0,
+      "guests": 12,
+      "cabins": 6,
+      "cabin_types": {
+        "double": 4,
+        "twin": 2
+      },
+      "crew": 5,
+      "home_port": "Bodrum, Turkey",
+      "updated_at": "2026-10-20T08:00:00Z",
+      "access": {
+        "profile": "full",
+        "calendar": "busy",
+        "rates": "none"
+      }
+    },
+    {
+      "id": "EXY-007",
+      "name": "Sirocco",
+      "type": "sail",
+      "builder": "Perini Navi",
+      "year": 2012,
+      "length": 45.0,
+      "guests": 10,
+      "cabins": 5,
+      "crew": 9,
+      "home_port": "Athens, Greece",
+      "cruising_areas": [
+        "Saronic",
+        "Cyclades"
+      ],
+      "updated_at": "2026-10-21T10:00:00Z",
+      "access": {
+        "profile": "full",
+        "calendar": "busy",
+        "rates": "none"
+      }
+    }
+  ],
+  "availability": [
+    {
+      "yacht_id": "EXY-002",
+      "start": "2027-04-01T09:00",
+      "end": "2027-05-15T18:00",
+      "timezone": "Europe/Istanbul",
+      "status": "busy"
+    },
+    {
+      "yacht_id": "EXY-007",
+      "start": "2027-08-01T12:00",
+      "end": "2027-08-08T12:00",
+      "timezone": "Europe/Athens",
+      "status": "busy"
+    }
+  ],
+  "bookings": [
+    {
+      "id": "BK-2027-0142",
+      "yacht_id": "EXY-001",
+      "status": "booked",
+      "start": "2027-07-10T12:00",
+      "end": "2027-07-17T12:00",
+      "timezone": "Europe/Athens",
+      "pickup": "Argostoli, Greece",
+      "dropoff": "Zakynthos, Greece",
+      "updated_at": "2026-10-24T09:00:00Z"
+    },
+    {
+      "id": "BK-2027-0150",
+      "yacht_id": "EXY-001",
+      "status": "hold",
+      "start": "2027-07-18T12:00",
+      "end": "2027-07-25T12:00",
+      "timezone": "Europe/Athens",
+      "pickup": "Zakynthos, Greece",
+      "dropoff": "Lefkas Marina, Greece",
+      "hold_expires": "2026-11-02T18:00:00Z",
+      "updated_at": "2026-10-24T09:00:00Z"
+    }
+  ],
+  "seasons": [
+    {
+      "yacht_id": "EXY-001",
+      "name": "High Season",
+      "start": "2027-07-01",
+      "end": "2027-08-31",
+      "base_port": "Lefkas Marina, Greece",
+      "cruising_areas": [
+        "Ionian"
+      ],
+      "relocation_ports": [
+        {
+          "port": "Corfu, Greece",
+          "fee": 4500
+        },
+        {
+          "port": "Zakynthos, Greece"
+        }
+      ],
+      "turnaround_hours": 24,
+      "min_nights": 7,
+      "currency": "EUR",
+      "weekly_rate_from": 108000,
+      "weekly_rate_to": 120000,
+      "vat": 5.2,
+      "apa": 35,
+      "terms": "plus_expenses"
+    }
+  ]
+}

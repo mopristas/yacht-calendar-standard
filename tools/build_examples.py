@@ -7,7 +7,10 @@ output of this script.
 """
 import csv
 import json
+import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -35,6 +38,11 @@ YACHTS = [
         "year": 2019, "length": 30.0, "guests": 12, "cabins": 6, "cabin_types": {"double": 4, "twin": 2},
         "crew": 5, "home_port": "Bodrum, Turkey", "updated_at": "2026-10-20T08:00:00Z",
     },
+    {
+        "id": "EXY-007", "name": "Sirocco", "type": "sail", "builder": "Perini Navi", "year": 2012,
+        "length": 45.0, "guests": 10, "cabins": 5, "crew": 9, "home_port": "Athens, Greece",
+        "cruising_areas": ["Saronic", "Cyclades"], "updated_at": "2026-10-21T10:00:00Z",
+    },
 ]
 
 BOOKINGS = [
@@ -47,6 +55,12 @@ BOOKINGS = [
     {"id": "UN-2027-0003", "yacht_id": "EXY-002", "status": "unavailable", "start": "2027-04-01T09:00",
      "end": "2027-05-15T18:00", "timezone": "Europe/Istanbul", "pickup": "Bodrum, Turkey",
      "dropoff": "Bodrum, Turkey", "updated_at": "2026-10-22T14:30:00Z"},
+    {"id": "BK-2027-0201", "yacht_id": "EXY-007", "status": "booked", "start": "2027-08-01T12:00",
+     "end": "2027-08-08T12:00", "timezone": "Europe/Athens", "pickup": "Athens, Greece",
+     "dropoff": "Mykonos, Greece", "updated_at": "2026-10-23T11:00:00Z"},
+    {"id": "BK-2028-0007", "yacht_id": "EXY-001", "status": "booked", "start": "2028-07-08T12:00",
+     "end": "2028-07-15T12:00", "timezone": "Europe/Athens", "pickup": "Lefkas Marina, Greece",
+     "dropoff": "Corfu, Greece", "updated_at": "2026-10-24T09:00:00Z"},
 ]
 
 SEASONS = [
@@ -60,7 +74,46 @@ SEASONS = [
      "relocation_ports": [{"port": "Göcek, Turkey", "fee": 2000}], "turnaround_hours": 24, "min_nights": 7,
      "currency": "EUR", "weekly_rate_from": 28000, "vat": 0, "apa": 20, "terms": "inclusive",
      "holidays": "Kurban Bayrami week 16-23 May 2027, flat 32000"},
+    {"yacht_id": "EXY-007", "name": "Summer", "start": "2027-06-01", "end": "2027-09-30",
+     "base_port": "Athens, Greece", "cruising_areas": ["Saronic", "Cyclades"], "turnaround_hours": 48,
+     "min_nights": 7, "currency": "EUR", "weekly_rate_from": 145000, "vat": 5.2, "apa": 30, "terms": "plus_expenses"},
 ]
+
+# The publisher's sharing setup (SHARING.md). Never sent to recipients.
+SHARING = {
+    "standard": "yacht-calendar-standard/0.3",
+    "publisher": {"id": "PUB-EXY", "name": "Example Yachts Ltd"},
+    "recipients": [
+        {"id": "R-DMA", "type": "company", "name": "DMA Yachting", "groups": ["G-ALL", "G-TOP"]},
+        {"id": "R-MARIA", "type": "person", "name": "Maria K.", "company": "R-DMA"},
+        {"id": "R-ACME", "type": "company", "name": "Acme Charters", "groups": ["G-ALL"]},
+    ],
+    "groups": [
+        {"id": "G-ALL", "name": "All partners"},
+        {"id": "G-TOP", "name": "Top brokers", "note": "Booked 10+ weeks with us in the last two seasons"},
+    ],
+    "boat_sets": [
+        {"id": "S-ALL", "name": "Whole fleet", "rule": {"all": True}},
+        {"id": "S-IONIAN", "name": "Ionian fleet", "rule": {"cruising_area": "Ionian"}},
+        {"id": "S-VIP", "name": "Owner's private boats", "yacht_ids": ["EXY-007"]},
+    ],
+    "shares": [
+        {"id": "SH-1", "to": {"group": "G-ALL"}, "boats": {"set": "S-ALL"},
+         "profile": "full", "calendar": "busy", "rates": "none"},
+        {"id": "SH-2", "to": {"group": "G-TOP"}, "boats": {"set": "S-IONIAN"},
+         "profile": "full", "calendar": "full", "rates": "full", "calendar_window": {"months_ahead": 18}},
+        {"id": "SH-3", "to": {"recipient": "R-MARIA"}, "boats": {"yacht": "EXY-007"},
+         "profile": "full", "calendar": "status", "rates": "seasons", "valid_until": "2027-09-30",
+         "note": "Maria is working the Sirocco owner's referral"},
+        {"id": "SH-4", "to": {"recipient": "R-ACME"}, "boats": {"set": "S-VIP"},
+         "profile": "none", "calendar": "none", "rates": "none"},
+    ],
+    "keys": [
+        {"id": "K-DMA-1", "recipient": "R-DMA", "label": "DMA AI assistant", "expires_at": None},
+        {"id": "K-MARIA-1", "recipient": "R-MARIA", "label": "Maria's AI assistant", "expires_at": None},
+        {"id": "K-ACME-1", "recipient": "R-ACME", "label": "Acme booking system", "expires_at": "2027-12-31T23:59:59Z"},
+    ],
+}
 
 AVAILABILITY = [{k: b[k] for k in ("yacht_id", "start", "end", "timezone", "status")} for b in BOOKINGS]
 
@@ -102,7 +155,7 @@ def write_json(path, data):
 
 
 def build():
-    head = {"standard": "yacht-calendar-standard/0.2", "ca": "Example Yachts Ltd", "generated_at": "2026-10-24T09:00:00Z"}
+    head = {"standard": "yacht-calendar-standard/0.3", "ca": "Example Yachts Ltd", "generated_at": "2026-10-24T09:00:00Z"}
     for level, lists in LEVEL_KEYS.items():
         write_json(ROOT / f"examples/feed-level-{level}.json", {**head, "level": level, **lists})
         folder = ROOT / f"templates/google-sheet/level-{level}"
@@ -119,6 +172,15 @@ def build():
         "ca": "Example Yachts Ltd", "partner": "Example Broker", "level": 3,
         "scopes": ["fleet:read", "availability:read", "calendar:read"],
         "yacht_ids": ["EXY-001"], "expires_at": "2027-12-31T23:59:59Z"})
+
+    from datetime import date
+    from resolve import build_feed
+    write_json(ROOT / "examples/sharing.json", SHARING)
+    full = {**head, "level": 4, "yachts": YACHTS, "bookings": BOOKINGS, "seasons": SEASONS}
+    for key in SHARING["keys"]:
+        name = key["id"].lower().rsplit("-", 1)[0].replace("k-", "")
+        write_json(ROOT / f"examples/feed-as-{name}.json",
+                   build_feed(SHARING, full, key["id"], date(2026, 10, 24), generated_at=head["generated_at"]))
 
 
 if __name__ == "__main__":

@@ -3,13 +3,29 @@
   "$id": "https://github.com/mopristas/yacht-calendar-standard/schema/availability.schema.json",
   "title": "Busy period (Level 2: availability:read)",
   "type": "object",
-  "required": ["yacht_id", "start", "end", "timezone", "status"],
+  "required": [
+    "yacht_id",
+    "start",
+    "end",
+    "timezone",
+    "status"
+  ],
   "additionalProperties": false,
   "properties": {
-    "yacht_id": { "$ref": "common.schema.json#/$defs/id" },
-    "start": { "$ref": "common.schema.json#/$defs/local_datetime" },
-    "end": { "$ref": "common.schema.json#/$defs/local_datetime" },
-    "timezone": { "$ref": "common.schema.json#/$defs/timezone" },
-    "status": { "$ref": "common.schema.json#/$defs/status" }
+    "yacht_id": {
+      "$ref": "common.schema.json#/$defs/id"
+    },
+    "start": {
+      "$ref": "common.schema.json#/$defs/local_datetime"
+    },
+    "end": {
+      "$ref": "common.schema.json#/$defs/local_datetime"
+    },
+    "timezone": {
+      "$ref": "common.schema.json#/$defs/timezone"
+    },
+    "status": {
+      "$ref": "common.schema.json#/$defs/availability_status"
+    }
   }
 }

@@ -27,6 +27,9 @@ CURRENCY = re.compile(r"^[A-Z]{3}$")
 LOCATION = re.compile(r"^.+, .+$")
 URL = re.compile(r"^https?://")
 STATUSES = {"booked", "hold", "unavailable"}
+ACCESS = {"profile": {"basic", "full"}, "calendar": {"none", "busy", "status", "full"}, "rates": {"none", "seasons", "full"}}
+BASIC_FIELDS = {"id", "name", "length", "guests", "cabins", "access"}
+PRICE_FIELDS = ("currency", "weekly_rate_from", "vat", "apa", "terms")
 YACHT_TYPES = {"motor", "sail", "catamaran", "power_catamaran", "gulet", "motor_sailer", "other"}
 CABIN_TYPES = {"master", "vip", "double", "twin", "single", "bunk", "convertible"}
 TERMS = {"plus_expenses", "inclusive", "all_inclusive"}
@@ -45,10 +48,11 @@ YACHT = {
     "diving": (False, "bool"), "amenities": (False, "str_list"), "toys": (False, "str_list"),
     "description": (False, "str"), "crew_description": (False, "str"), "photos": (False, "url_list"),
     "videos": (False, "url_list"), "brochure": (False, "url"), "updated_at": (False, "utc"),
+    "access": (False, "access"),
 }
 AVAILABILITY = {
     "yacht_id": (True, "id"), "start": (True, "local_dt"), "end": (True, "local_dt"),
-    "timezone": (True, "tz"), "status": (True, "status"),
+    "timezone": (True, "tz"), "status": (True, "avail_status"),
 }
 BOOKING = {
     "id": (True, "id"), "yacht_id": (True, "id"), "status": (True, "status"),
@@ -59,9 +63,9 @@ BOOKING = {
 SEASON = {
     "yacht_id": (True, "id"), "name": (True, "str"), "start": (True, "date"), "end": (True, "date"),
     "base_port": (True, "location"), "cruising_areas": (True, "str_list"), "relocation_ports": (False, "ports"),
-    "turnaround_hours": (True, "int"), "min_nights": (False, "pos_int"), "currency": (True, "currency"),
-    "weekly_rate_from": (True, "number"), "weekly_rate_to": (False, "number"),
-    "vat": (True, "percent"), "apa": (True, "percent"), "terms": (True, "terms"), "holidays": (False, "str"),
+    "turnaround_hours": (True, "int"), "min_nights": (False, "pos_int"), "currency": (False, "currency"),
+    "weekly_rate_from": (False, "number"), "weekly_rate_to": (False, "number"),
+    "vat": (False, "percent"), "apa": (False, "percent"), "terms": (False, "terms"), "holidays": (False, "str"),
 }
 LISTS = {"yachts": YACHT, "availability": AVAILABILITY, "bookings": BOOKING, "seasons": SEASON}
 
@@ -89,6 +93,8 @@ def check_value(kind, v):
         "bool": lambda: isinstance(v, bool),
         "yacht_type": lambda: v in YACHT_TYPES,
         "status": lambda: v in STATUSES,
+        "avail_status": lambda: v in STATUSES | {"busy"},
+        "access": lambda: isinstance(v, dict) and set(v) == set(ACCESS) and all(v[k] in ACCESS[k] for k in ACCESS),
         "terms": lambda: v in TERMS,
         "local_dt": lambda: isinstance(v, str) and LOCAL_DT.match(v),
         "utc": lambda: isinstance(v, str) and UTC_TS.match(v),
@@ -149,11 +155,9 @@ def check_rules(feed, errors, warnings):
     if len(known) != len(yacht_ids):
         errors.append("yachts: duplicate id")
 
-    name = "bookings" if "bookings" in feed else "availability"
-    periods = feed.get(name) or []
     booking_ids = set()
     by_yacht = {}
-    for i, p in enumerate(periods):
+    for name, i, p in [(n, i, p) for n in ("availability", "bookings") for i, p in enumerate(feed.get(n) or [])]:
         if not isinstance(p, dict):
             continue
         where = f"{name}[{i}]"
@@ -196,7 +200,48 @@ def check_rules(feed, errors, warnings):
             errors.append(f"seasons[{i}]: weekly_rate_to is below weekly_rate_from")
 
 
+def check_per_yacht(feed, errors):
+    """Every yacht says what this recipient may see; the lists must agree with it."""
+    access = {}
+    for i, y in enumerate(feed.get("yachts") or []):
+        if not isinstance(y, dict):
+            continue
+        a = y.get("access")
+        if not isinstance(a, dict):
+            errors.append(f"yachts[{i}]: a per_yacht feed needs 'access' on every yacht")
+            continue
+        access[y.get("id")] = a
+        if a.get("profile") == "basic" and set(y) - BASIC_FIELDS:
+            errors.append(f"yachts[{i}]: profile 'basic' allows only {sorted(BASIC_FIELDS - {'access'})}, found {sorted(set(y) - BASIC_FIELDS)}")
+    levels = {a.get("calendar") for a in access.values()}
+    if levels & {"busy", "status"} and "availability" not in feed:
+        errors.append("a yacht has calendar 'busy' or 'status' but the feed has no 'availability' list")
+    if "full" in levels and "bookings" not in feed:
+        errors.append("a yacht has calendar 'full' but the feed has no 'bookings' list")
+    for i, p in enumerate(feed.get("availability") or []):
+        cal = access.get(p.get("yacht_id"), {}).get("calendar") if isinstance(p, dict) else None
+        if cal not in ("busy", "status"):
+            errors.append(f"availability[{i}]: yacht '{p.get('yacht_id')}' has calendar '{cal}', not busy or status")
+        elif (cal == "busy") != (p.get("status") == "busy"):
+            errors.append(f"availability[{i}]: calendar '{cal}' must {'only' if cal == 'busy' else 'never'} use status 'busy'")
+    for i, p in enumerate(feed.get("bookings") or []):
+        cal = access.get(p.get("yacht_id"), {}).get("calendar") if isinstance(p, dict) else None
+        if cal != "full":
+            errors.append(f"bookings[{i}]: yacht '{p.get('yacht_id')}' has calendar '{cal}', not full")
+    for i, s in enumerate(feed.get("seasons") or []):
+        rates = access.get(s.get("yacht_id"), {}).get("rates") if isinstance(s, dict) else None
+        has_prices = isinstance(s, dict) and any(k in s for k in PRICE_FIELDS + ("weekly_rate_to", "holidays"))
+        if rates not in ("seasons", "full"):
+            errors.append(f"seasons[{i}]: yacht '{s.get('yacht_id')}' has rates '{rates}'")
+        elif rates == "seasons" and has_prices:
+            errors.append(f"seasons[{i}]: rates 'seasons' must not carry prices")
+        elif rates == "full" and any(k not in s for k in PRICE_FIELDS):
+            errors.append(f"seasons[{i}]: rates 'full' needs the price fields {list(PRICE_FIELDS)}")
+
+
 def provided_level(feed):
+    if feed.get("level") == "per_yacht":
+        return "per_yacht"
     if "seasons" in feed and "bookings" in feed:
         return 4
     if "bookings" in feed:
@@ -227,8 +272,21 @@ def validate(feed, from_sheet=False):
         present = {k for k in LISTS if k in feed}
         if present != REQUIRED_KEYS[level]:
             errors.append(f"level {level} feed must contain exactly {sorted(REQUIRED_KEYS[level])}, found {sorted(present)}")
+    elif level == "per_yacht":
+        check_per_yacht(feed, errors)
     elif "level" in feed:
-        errors.append(f"level must be 1, 2, 3 or 4, found {level!r}")
+        errors.append(f"level must be 1, 2, 3, 4 or 'per_yacht', found {level!r}")
+    if level != "per_yacht":
+        for i, a in enumerate(feed.get("availability") or []):
+            if isinstance(a, dict) and a.get("status") == "busy":
+                errors.append(f"availability[{i}]: status 'busy' is only for per_yacht feeds")
+        for i, y in enumerate(feed.get("yachts") or []):
+            if isinstance(y, dict) and "access" in y:
+                errors.append(f"yachts[{i}]: 'access' is only for per_yacht feeds")
+    if level == 4:
+        for i, s in enumerate(feed.get("seasons") or []):
+            if isinstance(s, dict) and any(k not in s for k in PRICE_FIELDS):
+                errors.append(f"seasons[{i}]: a level 4 feed needs the price fields {list(PRICE_FIELDS)}")
 
     for name, fields in LISTS.items():
         if name in feed:
@@ -281,7 +339,7 @@ def csv_cell(field, raw, fields):
 
 def load_sheet_folder(folder):
     tabs = {"Yachts": "yachts", "Availability": "availability", "Bookings": "bookings", "Seasons": "seasons"}
-    feed = {"standard": "yacht-calendar-standard/0.2", "ca": folder.name,
+    feed = {"standard": "yacht-calendar-standard/0.3", "ca": folder.name,
             "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")}
     for tab, key in tabs.items():
         path = folder / f"{tab}.csv"
@@ -302,7 +360,7 @@ def main(argv):
     else:
         feed, from_sheet = json.loads(path.read_text(encoding="utf-8")), False
     errors, warnings, level = validate(feed, from_sheet)
-    names = {0: "none", 1: "Fleet", 2: "Availability", 3: "Calendar", 4: "Seasons and rates"}
+    names = {0: "none", 1: "Fleet", 2: "Availability", 3: "Calendar", 4: "Seasons and rates", "per_yacht": "set per yacht"}
     for w in warnings:
         print(f"warning: {w}")
     for e in errors:

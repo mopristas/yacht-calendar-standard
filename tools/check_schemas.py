@@ -15,8 +15,12 @@ registry = Registry().with_resources(
 feed_schema = json.loads((root / "schema/feed.schema.json").read_text())
 validator = Draft202012Validator(feed_schema, registry=registry)
 failed = 0
-for path in sorted((root / "examples").glob("feed-level-*.json")):
-    errs = list(validator.iter_errors(json.loads(path.read_text())))
+sharing = Draft202012Validator(json.loads((root / "schema/sharing.schema.json").read_text()), registry=registry)
+for path in sorted((root / "examples").glob("*.json")):
+    if path.name == "key.json":
+        continue
+    v = sharing if path.name == "sharing.json" else validator
+    errs = list(v.iter_errors(json.loads(path.read_text())))
     for e in errs:
         print(f"{path.name}: {'/'.join(map(str, e.path))}: {e.message}")
     print(f"{path.name}: {'OK' if not errs else 'FAIL'}")
